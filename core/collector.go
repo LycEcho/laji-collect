@@ -42,6 +42,7 @@ func Crond() {
 	keyword.Extractor.Init(keyword.DefaultProps, true, config.ExecPath+"dictionary.txt")
 
 	//1小时运行一次，采集地址，加入到地址池
+
 	//每分钟运行一次，检查是否有需要采集的文章s
 	crontab := cron.New(cron.WithSeconds())
 	//10分钟抓一次列表
@@ -50,7 +51,7 @@ func Crond() {
 	crontab.AddFunc("1 */1 * * * *", CollectDetailTask)
 	crontab.Start()
 	//启动的时候，先执行一遍
-	go CollectListTask()
+	//go CollectListTask()
 	go CollectDetailTask()
 }
 
@@ -119,8 +120,6 @@ func GetArticleLinks(v *ArticleSource) {
 				}
 			}
 
-
-
 			//先检查数据库里有没有，没有的话，就抓回来
 			article.CreatedTime = int(time.Now().Unix())
 			article.SourceId = v.Id
@@ -129,12 +128,12 @@ func GetArticleLinks(v *ArticleSource) {
 			db.Model(Article{}).Where(Article{OriginUrl: article.OriginUrl}).FirstOrCreate(&article)
 		}
 		return
-	}else{
+	} else {
 		goto RETURNERR
 	}
 
 RETURNERR:
-		db.Model(v).Update("error_times", v.ErrorTimes+1)
+	db.Model(v).Update("error_times", v.ErrorTimes+1)
 
 }
 
@@ -357,6 +356,7 @@ func CollectLinks(link string) ([]Article, error) {
 	return articles, nil
 }
 
+//解析链接
 func ParseLink(link string, baseUrl string) string {
 	if !strings.HasSuffix(baseUrl, "/") {
 		baseUrl += "/"
@@ -417,6 +417,7 @@ func replaceDot(currUrl string, baseUrl string) string {
 	return u + strings.Join(rst, "/")
 }
 
+//采集详情
 func CollectDetail(article *Article) error {
 	requestData, err := Request(article.OriginUrl)
 	if err != nil {
@@ -453,6 +454,7 @@ func CollectDetail(article *Article) error {
 	return nil
 }
 
+//解析 百度百科
 func (article *Article) ParseBaikeDetail(doc *goquery.Document, body string) {
 	//获取标题
 	article.Title = doc.Find("h1").Text()
@@ -482,6 +484,7 @@ func (article *Article) ParseBaikeDetail(doc *goquery.Document, body string) {
 	article.Content = content
 }
 
+//解析正常网站
 func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
 	article.ParseTitle(doc, body)
 
@@ -508,7 +511,7 @@ func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
 		article.Author = author
 	}
 
-	//尝试获取法布时间
+	//尝试获取发布时间
 	reg = regexp.MustCompile(`(?i)<meta\s+name="PubDate"\s+content="(.*?)"[^>]*>`)
 	match = reg.FindStringSubmatch(body)
 	if len(match) > 1 {
@@ -766,11 +769,17 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 		}
 	}
 	//对内容进行处理
+	//替换资源地址
 	re, _ := regexp.Compile("src=[\"']+?(.*?)[\"']+?[^>]+?>")
 	content = re.ReplaceAllStringFunc(content, article.ReplaceSrc)
 
+	//替换链接
 	re2, _ := regexp.Compile("href=[\"']+?(.*?)[\"']+?[^>]+?>")
 	content = re2.ReplaceAllStringFunc(content, article.ReplaceHref)
+
+	//清空所有className
+	re3, _ := regexp.Compile("class=[\"']+?(.*?)[\"']")
+	content = re3.ReplaceAllLiteralString(content, "")
 
 	article.ContentText = contentText
 	article.Description = strings.TrimSpace(description)
@@ -818,7 +827,7 @@ func (article *Article) ReplaceHref(src string) string {
  * 请求域名返回数据
  */
 func Request(urlPath string) (*RequestData, error) {
-	resp, body, errs := gorequest.New().TLSClientConfig(&tls.Config{ InsecureSkipVerify: true}).Timeout(90 * time.Second).AppendHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36").Get(urlPath).End()
+	resp, body, errs := gorequest.New().TLSClientConfig(&tls.Config{InsecureSkipVerify: true}).Timeout(90*time.Second).AppendHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36").Get(urlPath).End()
 	if len(errs) > 0 {
 		//如果是https,则尝试退回http请求
 		if strings.HasPrefix(urlPath, "https") {

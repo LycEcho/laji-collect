@@ -24,6 +24,7 @@ func InstallForm(ctx iris.Context) {
 		ctx.Redirect("/")
 		return
 	}
+
 	var req request.Install
 	if err := ctx.ReadForm(&req); err != nil {
 		ctx.JSON(iris.Map{

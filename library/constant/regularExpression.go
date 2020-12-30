@@ -1,5 +1,7 @@
 package constant
 
 const (
-		RegularExpressionContentAttrClass = "class=[\"']+?(.*?)[\"']+?[^>]+?"
+		RegularExpressionContentAttrClass 				= "class=[\"'][^('|\")]*[\"']"
+		RegularExpressionContentAttrClassComplete 		= "class=[\"'][^('|\")]*[\"']"
+		RegularExpressionContentAttrData_Complete 		= "data-[^=]+=[\"'][^('|\")]*[\"']"
 		)

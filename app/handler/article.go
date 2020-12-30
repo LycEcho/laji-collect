@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
+	"github.com/kataras/iris/v12"
 	"lajiCollect/app/provider"
 	"lajiCollect/app/request"
+	"lajiCollect/app/response"
 	"lajiCollect/config"
 	"lajiCollect/core"
-	"github.com/kataras/iris/v12"
+	"lajiCollect/model"
 )
 
 func Keywords(ctx iris.Context) {
@@ -80,6 +83,7 @@ func ArticleSourceListApi(ctx iris.Context) {
 	pageSize := ctx.URLParamIntDefault("limit", 20)
 
 	sourceList, total, err := provider.GetArticleSourceList(currentPage, pageSize)
+	list := response.FormatArticleSourceList(sourceList)
 	if err != nil {
 		ctx.JSON(iris.Map{
 			"code": config.StatusFailed,
@@ -91,7 +95,7 @@ func ArticleSourceListApi(ctx iris.Context) {
 	ctx.JSON(iris.Map{
 		"code":  config.StatusOK,
 		"msg":   "",
-		"data":  sourceList,
+		"data":  list,
 		"count": total,
 	})
 }
@@ -140,7 +144,7 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 		})
 		return
 	}
-	var source *core.ArticleSource
+	var source *model.ArticleSource
 	if req.ID > 0 {
 		source, err = provider.GetArticleSourceById(req.ID)
 		if err != nil {
@@ -159,7 +163,7 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 			})
 			return
 		}
-		source = &core.ArticleSource{}
+		source = &model.ArticleSource{}
 		source.Url = req.Url
 	}
 
@@ -167,7 +171,12 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 		source.Url = req.Url
 	}
 	source.ErrorTimes 			= req.ErrorTimes
-	source.UrlRuleOnlyMyself 	= req.UrlRuleOnlyMyself
+
+	var articleSourceAttr model.ArticleSourceAttr
+
+	fieldsData, _ := json.Marshal(req.Rule)
+	articleSourceAttr.Rule = string(fieldsData[:])
+	source.Attr = articleSourceAttr
 
 	err = source.Save()
 	if err != nil {

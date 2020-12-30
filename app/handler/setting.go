@@ -112,6 +112,7 @@ func PublishSettingForm(ctx iris.Context) {
 			})
 		}
 	}
+
 	var extraFields []config.KeyValue
 	for _, v := range req.ExtraFields {
 		vv := strings.Split(v, ":")
@@ -123,8 +124,8 @@ func PublishSettingForm(ctx iris.Context) {
 		}
 	}
 
-	config.JsonData.Content.Headers = headers
-	config.JsonData.Content.Cookies = cookies
+	config.JsonData.Content.Headers 	= headers
+	config.JsonData.Content.Cookies 	= cookies
 	config.JsonData.Content.ExtraFields = extraFields
 
 	err := config.WriteConfig()

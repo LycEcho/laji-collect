@@ -12,8 +12,8 @@
 	"server": {
 		"site_name": "辣鸡采集",
 		"host": "localhost",
-		"env": "production",
-		"log_level": "error",
+		"env": "production",  /* production | development */
+		"log_level": "error", /* "disable" | "fatal" | "error" | "warn" | "info" | "debug" */
 		"port": 8088
 	},
 	"collector": {

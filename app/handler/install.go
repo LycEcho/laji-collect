@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"lajiCollect/app/request"
-	"lajiCollect/config"
-	"lajiCollect/core"
-	"lajiCollect/services"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/kataras/iris/v12"
+	"lajiCollect/app/request"
+	"lajiCollect/config"
+	"lajiCollect/model"
+	"lajiCollect/services"
 )
 
 func Install(ctx iris.Context) {
@@ -24,6 +24,7 @@ func InstallForm(ctx iris.Context) {
 		ctx.Redirect("/")
 		return
 	}
+
 	var req request.Install
 	if err := ctx.ReadForm(&req); err != nil {
 		ctx.JSON(iris.Map{
@@ -61,7 +62,7 @@ func InstallForm(ctx iris.Context) {
 
 	config.InitJSON()
 	services.InitDB()
-	services.DB.AutoMigrate(&core.Article{}, &core.ArticleData{}, &core.ArticleSource{})
+	services.DB.AutoMigrate(&model.Article{}, &model.ArticleData{}, &model.ArticleSource{})
 
 	ctx.JSON(iris.Map{
 		"code": config.StatusOK,

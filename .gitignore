@@ -17,3 +17,5 @@
 /config.json
 /collector*
 /test
+/test.go
+main

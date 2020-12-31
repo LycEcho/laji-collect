@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"lajiCollect/config"
-	"lajiCollect/core"
-	"lajiCollect/services"
 	"github.com/kataras/iris/v12"
+	"lajiCollect/config"
+	"lajiCollect/model"
+	"lajiCollect/services"
 	"time"
 )
 
@@ -38,10 +38,10 @@ func IndexEchartsApi(ctx iris.Context) {
 		countTime, _ := time.ParseInLocation("2006-01-02 15:04", time.Now().Format("2006-01-02")+" "+v, loc)
 		endTime := countTime.Unix()
 		startTime := endTime - 3600
-		services.DB.Model(&core.Article{}).Where("`status` = 1").Where("`created_time` >= ?", startTime).Where("`created_time` < ?", endTime).Count(&articleCount)
+		services.DB.Model(&model.Article{}).Where("`status` = 1").Where("`created_time` >= ?", startTime).Where("`created_time` < ?", endTime).Count(&articleCount)
 		articleHourCounts = append(articleHourCounts, articleCount)
 
-		services.DB.Model(&core.Article{}).Where("`status` = 1").Where("`created_time` >= ?", startTime).Where("`created_time` < ?", endTime).Group("source_id").Count(&sourceCount)
+		services.DB.Model(&model.Article{}).Where("`status` = 1").Where("`created_time` >= ?", startTime).Where("`created_time` < ?", endTime).Group("source_id").Count(&sourceCount)
 		sourceHourCounts = append(sourceHourCounts, sourceCount)
 	}
 	for i, _ := range days {
@@ -51,10 +51,10 @@ func IndexEchartsApi(ctx iris.Context) {
 		countDay, _ := time.ParseInLocation("2006-01-02 15:04", nowTime.AddDate(0, 0, -i).Format("2006-01-02 00:00"), loc)
 		startTime := countDay.Unix()
 		endTime := startTime + 86400
-		services.DB.Model(&core.Article{}).Where("`status` = 1").Where("`created_time` >= ?", startTime).Where("`created_time` < ?", endTime).Count(&articleCount)
+		services.DB.Model(&model.Article{}).Where("`status` = 1").Where("`created_time` >= ?", startTime).Where("`created_time` < ?", endTime).Count(&articleCount)
 		articleDayCounts = append(articleDayCounts, articleCount)
 
-		services.DB.Model(&core.Article{}).Where("`status` = 1").Where("`created_time` >= ?", startTime).Where("`created_time` < ?", endTime).Group("source_id").Count(&sourceCount)
+		services.DB.Model(&model.Article{}).Where("`status` = 1").Where("`created_time` >= ?", startTime).Where("`created_time` < ?", endTime).Group("source_id").Count(&sourceCount)
 
 		sourceDayCounts = append(sourceDayCounts, sourceCount)
 	}

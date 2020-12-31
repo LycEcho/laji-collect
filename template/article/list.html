@@ -39,7 +39,7 @@
                     }
                 }
                 ,{field: 'status', title: '状态', edit: 'text', width:100, templet: function(d){
-                        return d.status === 3 ? "无效数据" : d.status === 2 ? "采集中" : d.status === 1 ? "有效数据" : d.status === 0 ? "待采集" : "其他数据";
+                        return d.status === 3 ? "<div style='color: red'>无效数据</div>" : d.status === 2 ? "<div style='color: yellow'>采集中</div>" : d.status === 1 ? "<div style='color: green'>有效数据</div>" : d.status === 0 ? "<div style='color: orange'>待采集</div>" : "<div style='color: gray'>其他数据</div>";
                     }
                 }
                 ,{fixed: 'right', width:220, align:'center', toolbar: '#control'}

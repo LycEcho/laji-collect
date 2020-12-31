@@ -9,6 +9,7 @@ import (
 	"lajiCollect/config"
 	"lajiCollect/core"
 	"lajiCollect/model"
+	"strings"
 )
 
 func Keywords(ctx iris.Context) {
@@ -136,7 +137,7 @@ func ArticleSourceDeleteApi(ctx iris.Context) {
 
 func ArticleSourceSaveApi(ctx iris.Context) {
 	var req request.ArticleSource
-	err := ctx.ReadForm(&req)
+	err := ctx.ReadJSON(&req)
 	if err != nil {
 		ctx.JSON(iris.Map{
 			"code": config.StatusFailed,
@@ -144,6 +145,7 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 		})
 		return
 	}
+
 	var source *model.ArticleSource
 	if req.ID > 0 {
 		source, err = provider.GetArticleSourceById(req.ID)
@@ -168,11 +170,14 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 	}
 
 	if req.Url != "" {
+		if strings.HasPrefix(req.Url, "http") == false {
+			req.Url = "http://"+req.Url
+		}
 		source.Url = req.Url
 	}
 	source.ErrorTimes 			= req.ErrorTimes
 
-	var articleSourceAttr model.ArticleSourceAttr
+	articleSourceAttr := &model.ArticleSourceAttr{}
 
 	fieldsData, _ := json.Marshal(req.Rule)
 	articleSourceAttr.Rule = string(fieldsData[:])

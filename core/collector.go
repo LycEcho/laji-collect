@@ -9,6 +9,7 @@
 	 "github.com/polaris1119/keyword"
 	 "github.com/robfig/cron/v3"
 	 "golang.org/x/net/html/charset"
+	 "lajiCollect/app/provider"
 	 "lajiCollect/config"
 	 "lajiCollect/library"
 	 "lajiCollect/model"
@@ -108,16 +109,19 @@ func GetArticleLinks(v *model.ArticleSource) {
 		}
 
 		for _, article := range articleList {
-			rule := v.GetParseRule()
-			//判断是否只拿属于该网站的链接
-			if rule.UrlOnlySelf == 1 {
-				articleUrlParse, err := url.Parse(article.OriginUrl)
-				if err != nil {
-					continue
-				}
 
-				if urlParse.Host != articleUrlParse.Host {
-					continue
+			rule,err := v.GetParseRule()
+			if err == nil {
+				//判断是否只拿属于该网站的链接
+				if rule.UrlOnlySelf == 1 {
+					articleUrlParse, err := url.Parse(article.OriginUrl)
+					if err != nil {
+						continue
+					}
+
+					if urlParse.Host != articleUrlParse.Host {
+						continue
+					}
 				}
 			}
 
@@ -365,10 +369,6 @@ func CollectLinks(link string) ([]model.Article, error) {
 	return articles, nil
 }
 
-
-
-
-
 //采集详情
 func CollectDetail(article *model.Article) error {
 	requestData, err := Request(article.OriginUrl)
@@ -391,11 +391,14 @@ func CollectDetail(article *model.Article) error {
 	//获取前缀
 	article.GetDomain()
 
+	sourceInfo,_ := provider.GetArticleSourceById(article.SourceId)
+
 	//如果是百度百科地址，单独处理
 	if strings.Contains(article.OriginUrl, "baike.baidu.com") {
 		article.ParseBaikeDetail(doc, requestData.Body)
 	} else {
-		article.ParseNormalDetail(doc, requestData.Body)
+		//开始进行普通模式分析内容
+		article.ParseNormalDetail(doc, requestData.Body, sourceInfo)
 	}
 	nameRune := []rune(article.Description)
 	curLen := len(nameRune)

@@ -45,7 +45,8 @@
                 ,{field: 'id', title: 'ID', width:80}
                 ,{field: 'url', title: '列表连接', edit: 'text', cellMinWidth:300}
                 ,{field: 'error_times', title: '尝试错误次数', edit: 'text', width:150}
-                ,{field: 'rule_only_myself', title: '过滤非本站网址', edit: 'text', width:150}
+                ,{field: 'urlOnlySelf', title: '过滤非本站网址', edit: 'text'}
+                ,{field: 'onlyText', title: '只保存文字', edit: 'text'}
                 ,{fixed: 'right', width:180, align:'center', toolbar: '#control'}
             ]]
         });
@@ -76,13 +77,17 @@
                         btn: ["确定", "取消"],
                         yes: function(index){
                             let data = form.val("source-form");
-                            $.post("/api/article/source/save", data, function(res) {
+                            $.postJson({
+                                url:"/api/article/source/save"
+                                ,data: data
+                                ,success: function(res) {
                                 if(res.code === 0) {
                                     layer.close(index);
                                     table.reload('list');
                                 }
                                 layer.msg(res.msg);
-                            }, 'json');
+                            }
+                            });
                         }
                     })
                     break;
@@ -112,13 +117,21 @@
         table.on('edit(list)', function(obj){
             let data = obj.data;
             data.error_times = Number(data.error_times);
-            data.url_rule_only_myself = Number(data.url_rule_only_myself);
-            $.post("/api/article/source/save", data, function(res) {
-                if(res.code === 0) {
-                    obj.update(res.data)
+            data.rule = {};
+            data.rule = {};
+            data.rule.urlOnlySelf = Number(data.urlOnlySelf);
+            data.rule.onlyText = Number(data.onlyText);
+            delete  data.url_only_self
+            $.postJson({
+                url:"/api/article/source/save"
+                ,data: data
+                ,success: function(res) {
+                    if(res.code === 0) {
+                        obj.update(res.data)
+                    }
+                    layer.msg(res.msg);
                 }
-                layer.msg(res.msg);
-            }, 'json');
+            });
         });
     });
 </script>

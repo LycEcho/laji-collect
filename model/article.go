@@ -17,24 +17,25 @@ import (
 )
 
 type Article struct {
-	Id           int    `json:"id" gorm:"column:id;type:int(10) unsigned not null AUTO_INCREMENT;primary_key"`
-	SourceId     int    `json:"source_id" gorm:"column:source_id;type:int(11) not null;default:0"`
-	Title        string `json:"title" gorm:"column:title;type:varchar(190) not null;default:'';index:idx_title"`
-	Keywords     string `json:"keywords" gorm:"column:keywords;type:varchar(250) not null;default:''"`
-	Description  string `json:"description" gorm:"column:description;type:varchar(250) not null;default:''"`
-	Content      string `json:"content" gorm:"-"`
-	ArticleType  int    `json:"article_type" gorm:"column:article_type;type:tinyint(1) unsigned not null;default:0;index:idx_article_type"`
-	OriginUrl    string `json:"origin_url" gorm:"column:origin_url;type:varchar(250) not null;default:'';index:idx_origin_url"`
-	Author       string `json:"author" gorm:"column:author;type:varchar(100) not null;default:''"`
-	Views        int    `json:"views" gorm:"column:views;type:int(10) not null;default:0;index:idx_views"`
-	Status       int    `json:"status" gorm:"column:status;type:tinyint(1) unsigned not null;default:0;index:idx_status"`
-	CreatedTime  int    `json:"created_time" gorm:"column:created_time;type:int(11) unsigned not null;default:0;index:idx_created_time"`
-	UpdatedTime  int    `json:"updated_time" gorm:"column:updated_time;type:int(11) unsigned not null;default:0;index:idx_updated_time"`
-	DeletedTime  int    `json:"-" gorm:"column:deleted_time;type:int(11) unsigned not null;default:0"`
-	OriginDomain string `json:"-" gorm:"-"`
-	OriginPath   string `json:"-" gorm:"-"`
-	ContentText  string `json:"-" gorm:"-"`
-	PubDate      string `json:"-" gorm:"-"`
+	Id           		int    `json:"id" gorm:"column:id;type:int(10) unsigned not null AUTO_INCREMENT;primary_key"`
+	SourceId     		int    `json:"source_id" gorm:"column:source_id;type:int(11) not null COMMENT '采集源ID';default:0"`
+	Title        		string `json:"title" gorm:"column:title;type:varchar(190) not null COMMENT '关键词';default:'';index:idx_title"`
+	Keywords     		string `json:"keywords" gorm:"column:keywords;type:varchar(250) not null COMMENT '关键词';default:''"`
+	Description  		string `json:"description" gorm:"column:description;type:varchar(250) not null COMMENT '描述';default:''"`
+	Content      		string `json:"content" gorm:"-"`																								//内容
+	ArticleType  		int    `json:"article_type" gorm:"column:article_type;type:tinyint(1) unsigned not null COMMENT '文章类型';default:0;index:idx_article_type"`
+	OriginUrl    		string `json:"origin_url" gorm:"column:origin_url;type:varchar(250) not null COMMENT '源地址';default:'';index:idx_origin_url"`
+	Author       		string `json:"author" gorm:"column:author;type:varchar(100) not null COMMENT '作者';default:''"`
+	Views        		int    `json:"views" gorm:"column:views;type:int(10) not null COMMENT '查看次数';default:0;index:idx_views"`
+	Status       		int    `json:"status" gorm:"column:status;type:tinyint(1) unsigned not null COMMENT '状态 【0=未发布】';default:0;index:idx_status"`
+	StatusRelease       int    `json:"status_release" gorm:"column:status_release;type:tinyint(1) unsigned not null COMMENT '发布状态 【0=未发布】';default:0;index:idx_status_release"`
+	CreatedTime  		int    `json:"created_time" gorm:"column:created_time;type:int(11) unsigned not null COMMENT '创建时间';default:0;index:idx_created_time"`
+	UpdatedTime  		int    `json:"updated_time" gorm:"column:updated_time;type:int(11) unsigned not null COMMENT '更新时间';default:0;index:idx_updated_time"`
+	DeletedTime  		int    `json:"-" gorm:"column:deleted_time;type:int(11) unsigned not null;default:0"`
+	OriginDomain 		string `json:"-" gorm:"-"`
+	OriginPath   		string `json:"-" gorm:"-"`
+	ContentText  		string `json:"-" gorm:"-"`
+	PubDate      		string `json:"-" gorm:"-"`
 }
 
 type ArticleData struct {
@@ -47,7 +48,7 @@ type ArticleSource struct {
 	Url        string            `json:"url" gorm:"column:url;type:varchar(190) not null;default:'';index:idx_url"`
 	UrlType    int               `json:"url_type" gorm:"column:url_type;type:tinyint(1) not null;default:0"`
 	ErrorTimes int               `json:"error_times" gorm:"column:error_times;type:int(10) not null;default:0;index:idx_error_times"`
-	Attr       ArticleSourceAttr `json:"attr" gorm:"-"`
+	Attr       *ArticleSourceAttr `json:"attr" gorm:"-"`
 }
 
 type ArticleSourceAttr struct {
@@ -55,12 +56,15 @@ type ArticleSourceAttr struct {
 	Rule 			string `json:"rule" gorm:"column:rule;type:longtext not null;"`
 }
 
-func(article *ArticleSource) GetParseRule() *request.ArticleSourceAttrRule {
+func(article *ArticleSource) GetParseRule() (*request.ArticleSourceAttrRule,error) {
 	resp := &request.ArticleSourceAttrRule{}
-	if err := json.Unmarshal([]byte(article.Attr.Rule), resp); err != nil{
-		resp = &request.ArticleSourceAttrRule{}
+	if article.Attr != nil {
+		if err := json.Unmarshal([]byte(article.Attr.Rule), resp); err != nil{
+			resp = &request.ArticleSourceAttrRule{}
+			return resp,err
+		}
 	}
-	return resp
+	return resp,nil
 }
 
 func (article *Article) Save(db *gorm.DB) error {
@@ -93,11 +97,11 @@ func (article *Article) Delete() error {
 
 func (source *ArticleSource) Save() error {
 	db := services.DB
-	if err := db.Save(source).Error; err != nil {
+	if err := db.Save(&source).Error; err != nil {
 		return err
 	}
 	source.Attr.SourceId =  source.Id
-	if err := db.Save(source.Attr).Error; err != nil {
+	if err := db.Save(&source.Attr).Error; err != nil {
 		return err
 	}
 	return nil
@@ -144,7 +148,7 @@ func (article *Article) ParseBaikeDetail(doc *goquery.Document, body string) {
 }
 
 //解析正常网站
-func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
+func (article *Article) ParseNormalDetail(doc *goquery.Document, body string,source *ArticleSource) {
 	article.ParseTitle(doc, body)
 
 	if article.Title != "" {
@@ -153,7 +157,7 @@ func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
 	}
 
 	//尝试获取正文内容
-	article.ParseContent(doc, body)
+	article.ParseContent(doc, body,source)
 
 	//尝试获取作者
 	reg := regexp.MustCompile(`<meta\s+name="Author"\s+content="(.*?)"[^>]*>`)
@@ -288,7 +292,7 @@ func (article *Article) ParseTitle(doc *goquery.Document, body string) {
 	article.Title = title
 }
 
-func (article *Article) ParseContent(doc *goquery.Document, body string) {
+func (article *Article) ParseContent(doc *goquery.Document, body string,source *ArticleSource) {
 	content := ""
 	contentText := ""
 	description := ""
@@ -350,7 +354,6 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 			if library.HasContain(contentText, config.CollectorConfig.ContentExclude) {
 				contentText = ""
 			}
-
 			inner := contentItem.Find("*")
 			for i := range inner.Nodes {
 				item := inner.Eq(i)
@@ -429,13 +432,13 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 	}
 
 	//对内容进行处理
-	article.ContentText = article.formatContent(contentText)
+	article.ContentText = contentText
 	article.Description = strings.TrimSpace(description)
-	article.Content = strings.TrimSpace(content)
+	article.Content 	= article.formatContent(strings.TrimSpace(content),source)
 }
 
 //处理内容
-func (article *Article) formatContent(content string) string{
+func (article *Article) formatContent(content string,source *ArticleSource) string{
 
 	//替换资源地址
 	re, _ := regexp.Compile("src=[\"']+?(.*?)[\"']+?[^>]+?>")
@@ -452,6 +455,23 @@ func (article *Article) formatContent(content string) string{
 	//清空所有的 data-**=‘**’
 	re4, _ := regexp.Compile(constant.RegularExpressionContentAttrData_Complete)
 	content = re4.ReplaceAllLiteralString(content, "")
+
+
+	//根据指定规则去除
+	rule,err := source.GetParseRule()
+	if  err == nil {
+		htmlR := strings.NewReader(content)
+		doc, err := goquery.NewDocumentFromReader(htmlR)
+		if err == nil {
+			if rule.OnlyText == 1{
+				doc.Find("img,video").Remove()
+			}
+		}
+
+		content, _ = doc.Html()
+	}
+
+
 	return content
 }
 

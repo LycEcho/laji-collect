@@ -175,8 +175,11 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 		}
 		source.Url = req.Url
 	}
-	source.ErrorTimes 			= req.ErrorTimes
-
+	source.UrlType 			= req.UrlType
+	if source.UrlType == 2{
+		source.IsMonitor = 0
+	}
+	source.IsMonitor  = req.IsMonitor
 	articleSourceAttr := &model.ArticleSourceAttr{}
 
 	fieldsData, _ := json.Marshal(req.Rule)

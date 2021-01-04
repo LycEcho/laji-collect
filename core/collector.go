@@ -11,6 +11,7 @@
 	 "golang.org/x/net/html/charset"
 	 "lajiCollect/app/provider"
 	 "lajiCollect/config"
+	 constant "lajiCollect/config/constant/db"
 	 "lajiCollect/library"
 	 "lajiCollect/model"
 	 "lajiCollect/services"
@@ -64,7 +65,7 @@ func CollectListTask() {
 	fmt.Println("collect list")
 	db := services.DB
 	var articleSources []model.ArticleSource
-	err := db.Model(model.ArticleSource{}).Where("`error_times` < ?", config.CollectorConfig.ErrorTimes).Find(&articleSources).Error
+	err := db.Model(model.ArticleSource{}).Where("`error_times` < ? AND is_monitor=?", config.CollectorConfig.ErrorTimes,1).Find(&articleSources).Error
 	if err != nil {
 		return
 	}
@@ -74,7 +75,7 @@ func CollectListTask() {
 	}
 }
 
-//采集文章
+//采集文章详情
 func CollectDetailTask() {
 	if services.DB == nil {
 		return
@@ -94,68 +95,138 @@ func CollectDetailTask() {
 	waitGroup.Wait()
 }
 
+//根据列表获取链接
 func getArticleLinks(v model.ArticleSource) {
 	GetArticleLinks(&v)
 }
 
+//获取文章详情 加入队列
+func getArticleDetail(v model.Article) {
+	 defer func() {
+		 waitGroup.Done()
+		 <-ch
+	 }()
+
+	 GetArticleDetail(&v)
+ }
+
+ //wordpress网站Rss链接
+ func GetArticleDetailWordpressRss(v *model.ArticleSource) error {
+	 requestData, err := Request(v.Url)
+	 if err != nil {
+		 log.Println(err)
+		 return err
+	 }
+
+	 requestData.Body = strings.ReplaceAll(requestData.Body,"content:encoded","contentEncoded")
+	 requestData.Body = strings.ReplaceAll(requestData.Body,"dc:creator","dcCreator")
+	 requestData.Body = strings.ReplaceAll(requestData.Body,"<![CDATA[","")
+	 requestData.Body = strings.ReplaceAll(requestData.Body,"]]>","")
+	 requestData.Body = strings.ReplaceAll(requestData.Body,"<link>","<linkR>")
+	 requestData.Body = strings.ReplaceAll(requestData.Body,"</link>","</linkR>")
+	 htmlR := strings.NewReader(requestData.Body)
+	 doc, err := goquery.NewDocumentFromReader(htmlR)
+	 if err != nil {
+		 return err
+	 }
+	 items := doc.Find("item")
+	 for i := range items.Nodes{
+	 	 nowEq := items.Eq(i)
+	 	 article := &model.Article{}
+		 article.SourceId 		= v.Id
+		 article.ArticleType 	= v.UrlType
+		 article.Status 		= constant.DbArticleStatusPass
+		 article.Title 			= nowEq.Find("title").Text()
+		 article.OriginUrl    = nowEq.Find("linkR").Text()
+		 article.Author 		= nowEq.Find("dcCreator").Text()
+		 article.Description 	= nowEq.Find("description").Text()
+		 //TODO 把分类的也加入关键词
+		 article.Keywords = nowEq.Find("category").Text()
+		 article.Keywords = strings.ReplaceAll(article.Keywords," ",",")
+		 keywords 		 := library.GetKeywords(article.Title, 5)
+		 article.Keywords = article.Keywords+strings.Join(keywords, ",")
+		 //内容
+		 html,_		:= nowEq.Find("contentEncoded").Html()
+		 article.Content = article.FormatContent(html,v)
+		 article.Save()
+	 }
+	 return nil
+ }
+
+
+//采集链接
 func GetArticleLinks(v *model.ArticleSource) {
 
 	db := services.DB
-	urlParse, err := url.Parse(v.Url)
-	if err == nil {
-		articleList, err := CollectLinks(v.Url)
-		if err != nil {
-			goto RETURNERR
-		}
-
-		for _, article := range articleList {
-
-			rule,err := v.GetParseRule()
-			if err == nil {
-				//判断是否只拿属于该网站的链接
-				if rule.UrlOnlySelf == 1 {
-					articleUrlParse, err := url.Parse(article.OriginUrl)
-					if err != nil {
-						continue
-					}
-
-					if urlParse.Host != articleUrlParse.Host {
-						continue
-					}
+	switch v.UrlType {
+		case constant.DbArticleUrlTypeWordpressRss:
+				//TODO wordpress Rss特殊情况
+				err := GetArticleDetailWordpressRss(v)
+				if err != nil {
+					goto RETURNERR
 				}
+				return
+			break
+	case constant.DbArticleUrlTypeDetail:
+		//先检查数据库里有没有，没有的话，就抓回来
+		article := &model.Article{}
+		article.CreatedTime 	= int(time.Now().Unix())
+		article.SourceId 		= v.Id
+		article.ArticleType 	= v.UrlType
+		article.Status 			= 0
+		article.OriginUrl 		= v.Url
+		db.Model(model.Article{}).Where(model.Article{OriginUrl: article.OriginUrl}).FirstOrCreate(&article)
+		return
+		break
+	case constant.DbArticleUrlTypeList:
+	default:
+		urlParse, err := url.Parse(v.Url)
+		if err == nil {
+			articleList, err := CollectLinks(v.Url)
+			if err != nil {
+				goto RETURNERR
 			}
 
-			//先检查数据库里有没有，没有的话，就抓回来
-			article.CreatedTime = int(time.Now().Unix())
-			article.SourceId = v.Id
-			article.ArticleType = v.UrlType
-			article.Status = 0
-			db.Model(model.Article{}).Where(model.Article{OriginUrl: article.OriginUrl}).FirstOrCreate(&article)
+			for _, article := range articleList {
+
+				rule,err := v.GetParseRule()
+				if err == nil {
+					//判断是否只拿属于该网站的链接
+					if rule.UrlOnlySelf == 1 {
+						articleUrlParse, err := url.Parse(article.OriginUrl)
+						if err != nil {
+							continue
+						}
+
+						if urlParse.Host != articleUrlParse.Host {
+							continue
+						}
+					}
+				}
+
+				//先检查数据库里有没有，没有的话，就抓回来
+				article.CreatedTime = int(time.Now().Unix())
+				article.SourceId = v.Id
+				article.ArticleType = v.UrlType
+				article.Status = 0
+				db.Model(model.Article{}).Where(model.Article{OriginUrl: article.OriginUrl}).FirstOrCreate(&article)
+			}
+			return
+		} else {
+			goto RETURNERR
 		}
-		return
-	} else {
-		goto RETURNERR
 	}
-
-RETURNERR:
-	db.Model(v).Update("error_times", v.ErrorTimes+1)
-
+	RETURNERR:
+		db.Model(v).Update("error_times", v.ErrorTimes+1)
 }
 
-func getArticleDetail(v model.Article) {
-	defer func() {
-		waitGroup.Done()
-		<-ch
-	}()
-
-	GetArticleDetail(&v)
-}
-
+//万能抓取详情页
 func GetArticleDetail(v *model.Article) {
 	db := services.DB
 	//标记当前为执行中
 	db.Model(model.Article{}).Where("`id` = ?", v.Id).Update("status", 2)
 
+	//开始抓取详情
 	_ = CollectDetail(v)
 
 	//更新到数据库中
@@ -200,11 +271,12 @@ func GetArticleDetail(v *model.Article) {
 
 	article := v
 	fmt.Println(status, v.Title, v.OriginUrl)
-	article.Save(db)
+	article.Save()
 
 	AutoPublish(article)
 }
 
+//自动发布推送
 func AutoPublish(article *model.Article) {
 	if config.ContentConfig.AutoPublish == 0 || article.Status != 1 {
 		return

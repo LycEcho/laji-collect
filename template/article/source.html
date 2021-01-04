@@ -9,11 +9,41 @@
 <script type="text/html" id="add-form">
     <div class="layui-form padding-normal" lay-filter="source-form">
         <div class="layui-form-item">
+            <label class="layui-form-label">数据源类型</label>
+            <div class="layui-input-block">
+                <select name="urlType" lay-verify="required">
+                    <option value="1" selected>万能抓取列表/首页</option>
+                    <option value="2">万能抓取详情页</option>
+                    <option value="3">wordpress网站Rss订阅</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
             <label class="layui-form-label">数据源地址</label>
             <div class="layui-input-block">
                 <input type="text" name="url" required  lay-verify="required" placeholder="http开头的网址" autocomplete="off" class="layui-input">
             </div>
         </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">只保存文字</label>
+            <div class="layui-input-block">
+                <input type="checkbox" lay-skin="switch" name="onlyText" value="1" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">过滤非本站链接</label>
+            <div class="layui-input-block">
+                <input type="checkbox" lay-skin="switch" name="urlOnlySelf" value="1" lay-text="过滤|不过滤">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">监听更新</label>
+            <div class="layui-input-block">
+                <input type="checkbox" lay-skin="switch" name="isMonitor" value="1" lay-text="监听|不监听">
+            </div>
+        </div>
+
     </div>
 </script>
 <script type="text/html" id="toolbar">
@@ -42,11 +72,22 @@
             ,toolbar: '#toolbar'
             ,cols: [[
                 {type:'checkbox', fixed: 'left'}
-                ,{field: 'id', title: 'ID', width:80}
+                ,{field: 'id', title: 'ID',width: 50}
                 ,{field: 'url', title: '列表连接', edit: 'text', cellMinWidth:300}
-                ,{field: 'error_times', title: '尝试错误次数', edit: 'text', width:150}
-                ,{field: 'urlOnlySelf', title: '过滤非本站网址', edit: 'text'}
-                ,{field: 'onlyText', title: '只保存文字', edit: 'text'}
+                ,{field: 'urlType', title: '链接类型',templet:function(d){
+                        switch (d.urlType){
+                            case 1:
+                                return '万能抓取列表/首页'
+                            case 2:
+                                return '万能抓取详情内容页'
+                            case 3:
+                                return 'wordpress网站Rss订阅'
+                        }
+                    }}
+                ,{field: 'errorTimes', title: '尝试错误次数', edit: 'text',width:80}
+                ,{field: 'urlOnlySelf', title: '过滤非本站网址', edit: 'text',width:80}
+                ,{field: 'onlyText', title: '只保存文本', edit: 'text',width:80}
+                ,{field: 'isMonitor', title: '监听状态', edit: 'text',width:80}
                 ,{fixed: 'right', width:180, align:'center', toolbar: '#control'}
             ]]
         });
@@ -72,11 +113,12 @@
                     layer.open({
                         type: 1,
                         title: "添加新的数据源",
-                        area: "450px",
+                        area: ["450px","450px"],
                         content: $("#add-form").html(),
                         btn: ["确定", "取消"],
                         yes: function(index){
                             let data = form.val("source-form");
+                            data = formatFormatData(data)
                             $.postJson({
                                 url:"/api/article/source/save"
                                 ,data: data
@@ -88,6 +130,9 @@
                                 layer.msg(res.msg);
                             }
                             });
+                        }
+                        ,success:function(){
+                            form.render()
                         }
                     })
                     break;
@@ -115,13 +160,7 @@
             }
         });
         table.on('edit(list)', function(obj){
-            let data = obj.data;
-            data.error_times = Number(data.error_times);
-            data.rule = {};
-            data.rule = {};
-            data.rule.urlOnlySelf = Number(data.urlOnlySelf);
-            data.rule.onlyText = Number(data.onlyText);
-            delete  data.url_only_self
+            let data = formatFormatData(obj.data);
             $.postJson({
                 url:"/api/article/source/save"
                 ,data: data
@@ -133,5 +172,17 @@
                 }
             });
         });
+
+        function formatFormatData(data){
+            data.error_times        = Number(data.error_times);
+            data.urlType            = Number(data.urlType);
+            data.isMonitor          = Number(data.isMonitor);
+            data.rule = {};
+            data.rule.urlOnlySelf   = Number(data.urlOnlySelf);
+            data.rule.onlyText      = Number(data.onlyText);
+            delete data.urlOnlySelf
+            delete data.onlyText
+            return data
+        }
     });
 </script>

@@ -8,8 +8,9 @@ import (
 type ArticleSourceList struct {
 	ID          int    `json:"id"`
 	Url         string `json:"url" validate:"required"`
-	ErrorTimes  int    `json:"error_times"`
-	UrlType     int    `json:"url_type"`
+	ErrorTimes  int    `json:"errorTimes"`
+	UrlType     int    `json:"urlType"`
+	IsMonitor   int8   `json:"isMonitor"`
 	UrlOnlySelf int8   `json:"urlOnlySelf"` //是否过滤非本站点的链接
 	OnlyText 	int8   `json:"onlyText"` //是否过滤非本站点的链接
 }

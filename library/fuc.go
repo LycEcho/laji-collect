@@ -9,15 +9,6 @@ import (
 	"unicode/utf8"
 )
 
-func DEBUG(val interface{}) {
-
-	fmt.Println("=====================================================================STAR=========================================================================")
-	fmt.Println("=============")
-	fmt.Println("=============", val)
-	fmt.Println("=============")
-	fmt.Println("==================================================================END=================================================================================")
-
-}
 
 func InArray(need string, needArray []string) bool {
 	for _, v := range needArray {
@@ -29,36 +20,7 @@ func InArray(need string, needArray []string) bool {
 	return false
 }
 
-func HasPrefix(need string, needArray []string) bool {
-	for _, v := range needArray {
-		if strings.HasPrefix(need, v) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func HasSuffix(need string, needArray []string) bool {
-	for _, v := range needArray {
-		if strings.HasSuffix(need, v) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func HasContain(need string, needArray []string) bool {
-	for _, v := range needArray {
-		if strings.Contains(need, v) {
-			return true
-		}
-	}
-
-	return false
-}
-
+//根据内容获取关键词
 func GetKeywords(content string, num int) []string {
 	var words []string
 	length := 2
@@ -88,6 +50,8 @@ func ParseLink(link string, baseUrl string) string {
 
 	return link
 }
+
+//相对链接转换绝对链接
 func replaceDot(currUrl string, baseUrl string) string {
 	if strings.HasPrefix(currUrl, "//") {
 		currUrl = fmt.Sprintf("https:%s", currUrl)

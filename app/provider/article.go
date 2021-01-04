@@ -62,6 +62,7 @@ func GetArticleById(id int) (*model.Article, error) {
 
 	return &article, nil
 }
+
 //获得采集源 根据Id
 func GetArticleSourceById(id int) (*model.ArticleSource, error) {
 	source := &model.ArticleSource{}
@@ -71,6 +72,7 @@ func GetArticleSourceById(id int) (*model.ArticleSource, error) {
 	GetArticleSourceInfo(source)
 	return source, nil
 }
+
 //获得采集源 根据Url
 func GetArticleSourceByUrl(uri string) (*model.ArticleSource, error) {
 	source := &model.ArticleSource{}

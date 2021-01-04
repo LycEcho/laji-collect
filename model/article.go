@@ -3,11 +3,10 @@ package model
 import (
 	"encoding/json"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/jinzhu/gorm"
 	"lajiCollect/app/request"
 	"lajiCollect/config"
+	"lajiCollect/config/constant/regular"
 	"lajiCollect/library"
-	"lajiCollect/library/constant"
 	"lajiCollect/services"
 	"log"
 	"regexp"
@@ -27,7 +26,7 @@ type Article struct {
 	OriginUrl    		string `json:"origin_url" gorm:"column:origin_url;type:varchar(250) not null COMMENT '源地址';default:'';index:idx_origin_url"`
 	Author       		string `json:"author" gorm:"column:author;type:varchar(100) not null COMMENT '作者';default:''"`
 	Views        		int    `json:"views" gorm:"column:views;type:int(10) not null COMMENT '查看次数';default:0;index:idx_views"`
-	Status       		int    `json:"status" gorm:"column:status;type:tinyint(1) unsigned not null COMMENT '状态 【0=未发布】';default:0;index:idx_status"`
+	Status       		int    `json:"status" gorm:"column:status;type:tinyint(1) unsigned not null COMMENT '状态 【0=待采集】【1=有效数据】【2=采集中】【3=无效数据】';default:0;index:idx_status"`
 	StatusRelease       int    `json:"status_release" gorm:"column:status_release;type:tinyint(1) unsigned not null COMMENT '发布状态 【0=未发布】';default:0;index:idx_status_release"`
 	CreatedTime  		int    `json:"created_time" gorm:"column:created_time;type:int(11) unsigned not null COMMENT '创建时间';default:0;index:idx_created_time"`
 	UpdatedTime  		int    `json:"updated_time" gorm:"column:updated_time;type:int(11) unsigned not null COMMENT '更新时间';default:0;index:idx_updated_time"`
@@ -46,8 +45,9 @@ type ArticleData struct {
 type ArticleSource struct {
 	Id         int               `json:"id" gorm:"column:id;type:int(10) unsigned not null AUTO_INCREMENT;primary_key"`
 	Url        string            `json:"url" gorm:"column:url;type:varchar(190) not null;default:'';index:idx_url"`
-	UrlType    int               `json:"url_type" gorm:"column:url_type;type:tinyint(1) not null;default:0"`
-	ErrorTimes int               `json:"error_times" gorm:"column:error_times;type:int(10) not null;default:0;index:idx_error_times"`
+	UrlType    int               `json:"urlType" gorm:"column:url_type;type:tinyint(1) not null COMMENT '【1=列表】【2=详情】【3=wordpress网站Rss链接】';default:0"`
+	ErrorTimes int               `json:"error_times" gorm:"column:error_times;type:int(10) not null COMMENT '抓取错误时间';default:0;index:idx_error_times"`
+	IsMonitor int               `json:"isMonitor" gorm:"column:is_monitor;type:tinyint(1) not null COMMENT '是否一直监听更新';default:0;"`
 	Attr       *ArticleSourceAttr `json:"attr" gorm:"-"`
 }
 
@@ -67,11 +67,11 @@ func(article *ArticleSource) GetParseRule() (*request.ArticleSourceAttrRule,erro
 	return resp,nil
 }
 
-func (article *Article) Save(db *gorm.DB) error {
+func (article *Article) Save() error {
 	if article.Id == 0 {
 		article.CreatedTime = int(time.Now().Unix())
 	}
-
+	db := services.DB
 	if err := db.Save(article).Error; err != nil {
 		return err
 	}
@@ -91,7 +91,6 @@ func (article *Article) Delete() error {
 	}
 
 	db.Where("id = ?", article.Id).Delete(ArticleData{})
-
 	return nil
 }
 
@@ -112,7 +111,9 @@ func (source *ArticleSource) Delete() error {
 	if err := db.Delete(source).Error; err != nil {
 		return err
 	}
-
+	if err := db.Where("source_id = ?", source.Id).Delete(ArticleSourceAttr{}).Error; err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -434,12 +435,12 @@ func (article *Article) ParseContent(doc *goquery.Document, body string,source *
 	//对内容进行处理
 	article.ContentText = contentText
 	article.Description = strings.TrimSpace(description)
-	article.Content 	= article.formatContent(strings.TrimSpace(content),source)
+	article.Content 	= article.FormatContent(content,source)
 }
 
 //处理内容
-func (article *Article) formatContent(content string,source *ArticleSource) string{
-
+func (article *Article) FormatContent(content string,source *ArticleSource) string {
+	content = strings.TrimSpace(content)
 	//替换资源地址
 	re, _ := regexp.Compile("src=[\"']+?(.*?)[\"']+?[^>]+?>")
 	content = re.ReplaceAllStringFunc(content, article.ReplaceSrc)
@@ -453,7 +454,7 @@ func (article *Article) formatContent(content string,source *ArticleSource) stri
 	content = re3.ReplaceAllLiteralString(content, "")
 
 	//清空所有的 data-**=‘**’
-	re4, _ := regexp.Compile(constant.RegularExpressionContentAttrData_Complete)
+	re4, _ := regexp.Compile(constant.RegularExpressionContentAttrDataComplete)
 	content = re4.ReplaceAllLiteralString(content, "")
 
 
@@ -467,11 +468,10 @@ func (article *Article) formatContent(content string,source *ArticleSource) stri
 				doc.Find("img,video").Remove()
 			}
 		}
-
 		content, _ = doc.Html()
+		content = strings.Replace(content,"<html><head></head><body>","",1)
+		content = strings.Replace(content,"</body></html>","",1)
 	}
-
-
 	return content
 }
 

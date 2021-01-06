@@ -23,4 +23,6 @@ type contentConfig struct {
 	Headers          []KeyValue `json:"headers"`
 	Cookies          []KeyValue `json:"cookies"`
 	ExtraFields      []KeyValue `json:"extra_fields"`
+	ContentHead		 string     `json:"contentHead"`
+	ContentFoot		 string    ` json:"contentFoot"`
 }

@@ -3,6 +3,7 @@ package config
 type collectorConfig struct {
 	ErrorTimes         int      `json:"error_times"`
 	Channels           int      `json:"channels"`
+	ChannelsPublish	   int		`json:"channels_publish"`
 	TitleMinLength     int      `json:"title_min_length"`
 	ContentMinLength   int      `json:"content_min_length"`
 	TitleExclude       []string `json:"title_exclude"`
@@ -15,6 +16,7 @@ type collectorConfig struct {
 var defaultCollectorConfig = collectorConfig{
 	ErrorTimes:       5,
 	Channels:         5,
+	ChannelsPublish:  5,
 	TitleMinLength:   6,
 	ContentMinLength: 200,
 	TitleExclude: []string{

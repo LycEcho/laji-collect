@@ -227,7 +227,7 @@ func ArticlePublishApi(ctx iris.Context) {
 
 	ctx.JSON(iris.Map{
 		"code": config.StatusOK,
-		"msg":  "删除成功",
+		"msg":  "推送成功",
 	})
 }
 

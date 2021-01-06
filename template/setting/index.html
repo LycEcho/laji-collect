@@ -1,4 +1,6 @@
-{% include "partial/header.html" %}
+{% extends 'partial/layouts.html' %}
+{% block seoTitle %}采集配置设置{% endblock %}
+{% block content %}
 <main class="container">
     <div class="install">
         <h1>采集配置</h1>
@@ -13,9 +15,15 @@
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">同时执行数量</label>
+                        <label class="layui-form-label">同时采集数量</label>
                         <div class="layui-input-block">
                             <input type="text" name="channels" value="" placeholder="默认5" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">同时发布数量</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="channels_publish" value="" placeholder="默认5" autocomplete="off" class="layui-input">
                         </div>
                     </div>
                 </div>
@@ -90,7 +98,7 @@
         </form>
     </div>
 </main>
-{% include "partial/footer.html" %}
+
 <script type="text/html" id="tag-template">
     <div class="tag-item layui-btn layui-btn-sm layui-btn-primary" data-type="itemType" data-index="itemIndex">
         <input type="hidden" name="itemType[]" value="itemTitle" />
@@ -147,6 +155,7 @@
             let postData = {};
             postData.error_times = Number(fields.error_times)
             postData.channels = Number(fields.channels)
+            postData.channels_publish = Number(fields.channels_publish)
             postData.title_min_length = Number(fields.title_min_length)
             postData.content_min_length = Number(fields.content_min_length)
             for(let i in fields) {
@@ -171,3 +180,4 @@
         });
     });
 </script>
+{% endblock %}

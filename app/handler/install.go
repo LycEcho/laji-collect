@@ -62,7 +62,7 @@ func InstallForm(ctx iris.Context) {
 
 	config.InitJSON()
 	services.InitDB()
-	services.DB.AutoMigrate(&model.Article{}, &model.ArticleData{}, &model.ArticleSource{})
+	services.DB.AutoMigrate(&model.Article{}, &model.ArticleData{}, &model.ArticleSource{},&model.ArticleSourceAttr{})
 
 	ctx.JSON(iris.Map{
 		"code": config.StatusOK,

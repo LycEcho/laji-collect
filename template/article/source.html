@@ -1,11 +1,28 @@
-{% include "partial/header.html" %}
-<main class="container">
-    <div class="install">
+{% extends 'partial/layouts.html' %}
+{% block seoTitle %}采集源列表{% endblock %}
+{% block content %}
+<main >
+
+    <div class="install container">
         <h1>数据源</h1>
-        <table id="list" lay-filter="list"></table>
+        <div class="tableList">
+        <table id="list" lay-filter="list" ></table>
+        </div>
     </div>
+    <div class="container layui-card tipsCard">
+        <div class="layui-card-header">Tips（2021-01-05）：</div>
+        <div class="layui-card-body">
+            <h3>万能抓取列表/首页:</h3>
+            <h4>链接地址示例：<a href="http://www.lycecho.com/" target="_blank">http://www.lycecho.com/</a> 或者 <a href="http://www.lycecho.com/archives/category/golang" target="_blank">http://www.lycecho.com/archives/category/golang</a></h4><hr>
+            <h3>万能抓取详情页:</h3>
+            <h4>链接地址示例：<a href="http://www.lycecho.com/archives/4565" target="_blank">http://www.lycecho.com/archives/4565</a> </h4><hr>
+            <h3>wordpress网站Rss订阅：</h3>
+            <h4>链接地址示例：<a href="http://www.lycecho.com/" target="_blank">http://www.lycecho.com/feed</a></h4>
+        </div>
+    </div>
+
 </main>
-{% include "partial/footer.html" %}
+
 <script type="text/html" id="add-form">
     <div class="layui-form padding-normal" lay-filter="source-form">
         <div class="layui-form-item">
@@ -186,3 +203,4 @@
         }
     });
 </script>
+{% endblock %}

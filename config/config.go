@@ -14,15 +14,28 @@ import (
 )
 
 type configData struct {
-	MySQL     mySQLConfig     `json:"mysql"`
-	Server    serverConfig    `json:"server"`
-	Collector collectorConfig `json:"collector"`
-	Content   contentConfig   `json:"content"`
+	MySQL     *mySQLConfig     `json:"mysql"`
+	Server    *serverConfig    `json:"server"`
+	Collector *collectorConfig `json:"collector"`
+	Content   *contentConfig   `json:"content"`
 }
 
-var ExecPath string
+var ExecPath 			string
+var JsonData 			*configData
+var MySQLConfig 		*mySQLConfig
+var ServerConfig 		*serverConfig
+var CollectorConfig 	*collectorConfig
+var ContentConfig 		*contentConfig
+
 
 func InitJSON() {
+
+	JsonData 			= &configData{}
+	MySQLConfig 		= &mySQLConfig{}
+	ServerConfig 		= &serverConfig{}
+	CollectorConfig 	= &collectorConfig{}
+	ContentConfig 	 	= &contentConfig{}
+
 	sep := string(os.PathSeparator)
 	root := filepath.Dir(os.Args[0])
 	ExecPath, _ = filepath.Abs(root)
@@ -58,14 +71,15 @@ func InitJSON() {
 
 	configStr = reg.ReplaceAllString(configStr, "")
 	buf = []byte(configStr)
-
-	if err := json.Unmarshal(buf, &JsonData); err != nil {
+	newJsonData := &configData{}
+	if err := json.Unmarshal(buf, newJsonData); err != nil {
 		fmt.Println("配置文件格式有误: ", err.Error())
 		os.Exit(-1)
 	}
 
+
 	//load Mysql
-	MySQLConfig = JsonData.MySQL
+	MySQLConfig = newJsonData.MySQL
 	if MySQLConfig.Database != "" {
 		url := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
 			MySQLConfig.User, MySQLConfig.Password, MySQLConfig.Host, MySQLConfig.Port, MySQLConfig.Database, MySQLConfig.Charset)
@@ -73,33 +87,36 @@ func InitJSON() {
 	}
 
 	//load server
-	ServerConfig = JsonData.Server
-	ServerConfig.ExecPath = ExecPath
+	ServerConfig 			= newJsonData.Server
+	ServerConfig.ExecPath 	= ExecPath
 
 	//load collector
-	CollectorConfig = loadCollectorConfig(JsonData.Collector)
+	CollectorConfig 		= loadCollectorConfig(newJsonData.Collector)
 
 	//load content
-	ContentConfig = JsonData.Content
+	ContentConfig 			= newJsonData.Content
+
+	JsonData 				= newJsonData
 }
 
-var JsonData configData
-var MySQLConfig mySQLConfig
-var ServerConfig serverConfig
-var CollectorConfig collectorConfig
-var ContentConfig contentConfig
+
 
 func init() {
 	InitJSON()
 }
 
-func loadCollectorConfig(collector collectorConfig) collectorConfig {
+func loadCollectorConfig(collector *collectorConfig) *collectorConfig {
 	if collector.ErrorTimes == 0 {
 		collector.ErrorTimes = defaultCollectorConfig.ErrorTimes
 	}
 	if collector.Channels == 0 {
 		collector.Channels = defaultCollectorConfig.Channels
 	}
+
+	if collector.ChannelsPublish == 0 {
+		collector.ChannelsPublish = defaultCollectorConfig.ChannelsPublish
+	}
+
 	if collector.TitleMinLength == 0 {
 		collector.TitleMinLength = defaultCollectorConfig.TitleMinLength
 	}

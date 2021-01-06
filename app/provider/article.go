@@ -1,6 +1,7 @@
 package provider
 
 import (
+	constant "lajiCollect/config/constant/db"
 	"lajiCollect/model"
 	"lajiCollect/services"
 )
@@ -20,6 +21,7 @@ func GetArticleSourceList(currentPage int, pageSize int) ([]*model.ArticleSource
 	return sources, total, nil
 }
 
+
 //获取采集源的附表数据
 func GetArticleSourceInfo(articleSource *model.ArticleSource){
 	if articleSource.Attr == nil {
@@ -29,25 +31,48 @@ func GetArticleSourceInfo(articleSource *model.ArticleSource){
 	}
 }
 //获得文章列表
-func GetArticleList(currentPage int, pageSize int) ([]model.Article, int, error) {
-	var articles []model.Article
+func GetArticleList(currentPage int, pageSize int) ([]*model.Article, int, error) {
+	articles := []*model.Article{}
 	offset := (currentPage - 1) * pageSize
 	var total int
 
-	builder := services.DB.Model(model.Article{}).Order("id desc")
+	builder := services.DB.Model(&model.Article{}).Order("id desc")
 	if err := builder.Count(&total).Limit(pageSize).Offset(offset).Find(&articles).Error; err != nil {
 		return nil, 0, err
 	}
 	if len(articles) > 0 {
 		for i, v := range articles {
-			var articleData model.ArticleData
-			if err := services.DB.Model(model.ArticleData{}).Where("`id` = ?", v.Id).First(&articleData).Error; err == nil {
+			articleData := &model.ArticleData{}
+			if err := services.DB.Model(&model.ArticleData{}).Where("`id` = ?", v.Id).First(&articleData).Error; err == nil {
 				articles[i].Content = articleData.Content
 			}
 		}
 	}
 	return articles, total, nil
 }
+
+//获得文章列表 发布列表
+func GetArticleListForRelease(currentPage int, pageSize int) ([]*model.Article, int, error) {
+	articles := []*model.Article{}
+	offset := (currentPage - 1) * pageSize
+	var total int
+
+	builder := services.DB.Model(&model.Article{}).Order("id asc")
+	if err := builder.Count(&total).Where("status_release=? AND status=?",constant.DbArticleStatusReleaseUn,constant.DbArticleStatusPass).Limit(pageSize).Offset(offset).Find(&articles).Error; err != nil {
+		return nil, 0, err
+	}
+	if len(articles) > 0 {
+		for i, v := range articles {
+			articleData := &model.ArticleData{}
+			if err := services.DB.Model(&model.ArticleData{}).Where("`id` = ?", v.Id).First(&articleData).Error; err == nil {
+				articles[i].Content = articleData.Content
+			}
+		}
+	}
+	return articles, total, nil
+}
+
+
 //获得文章 根据Id
 func GetArticleById(id int) (*model.Article, error) {
 	var article model.Article

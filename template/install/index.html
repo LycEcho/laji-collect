@@ -1,4 +1,5 @@
-{% include "partial/header.html" %}
+{% extends 'partial/layouts.html' %}
+{% block content %}
 <main class="container">
     <div class="install">
         <h1>初始化采集工具</h1>
@@ -42,7 +43,6 @@
         </form>
     </div>
 </main>
-{% include "partial/footer.html" %}
 <script>
     layui.use(['form', 'layer'], function(){
         let form = layui.form;
@@ -67,3 +67,4 @@
         });
     });
 </script>
+{% endblock %}

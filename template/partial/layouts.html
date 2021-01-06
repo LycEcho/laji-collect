@@ -5,11 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
     <meta name="applicable-device" content="mobile">
-    <title>辣鸡采集 - 免费网络爬虫软件_网页数据抓取工具</title>
-    <meta name="keywords" content="爬虫,爬虫软件,网络爬虫,爬虫工具,采集器,数据采集器,采集软件,网页抓取工具,采集程序,论坛采集软件,文章采集,抓站工具,网页下载工具" />
-    <meta name="description" content="辣鸡网页数据采集器，是一款使用简单、功能强大的网络爬虫工具，完全可视化操作，无需编写代码，内置海量模板，支持任意网络数据抓取，连续四年大数据行业数据采集领域排名不是第一。" />
-
+    <title>{% block seoTitle %}辣鸡采集-{% endblock %}免费网络爬虫软件_网页数据抓取工具</title>
+    <meta name="keywords" content="{% block seoKeywords %}爬虫,爬虫软件,网络爬虫,爬虫工具,采集器,数据采集器,采集软件,网页抓取工具,采集程序,论坛采集软件,文章采集,抓站工具,网页下载工具{% endblock %}" />
+    <meta name="description" content="{% block seoDescription %}辣鸡网页数据采集器，是一款使用简单、功能强大的网络爬虫工具，完全可视化操作，无需编写代码，内置海量模板，支持任意网络数据抓取，连续四年大数据行业数据采集领域排名不是第一。{% endblock %}" />
     <link href="https://www.layuicdn.com/layui/css/layui.css" rel="stylesheet">
+    <script src="https://www.layuicdn.com/layui/layui.js"></script>
+    <script>
+        layui.config({
+            base: '/layui/mods/'
+
+        }).extend({
+            common:'common'
+        }).use(['common']);
+    </script>
+</html>
+
     <style>
         body{
             box-sizing: border-box;
@@ -104,7 +114,7 @@
             background-color: #ffffff;
             box-shadow: 0 1px 5px 0 rgba(0,0,0, 0.1);
             width: 100%;
-            max-width: 1020px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         .footer{
@@ -123,8 +133,8 @@
         .footer p{
             margin-top: 4px;
         }
-        .install{
-            padding: 20px;
+        .install {
+            padding: 10px 0;
         }
         .install h1{
             margin-bottom: 20px;
@@ -150,13 +160,13 @@
             background-color: #fff;
         }
         .layadmin-carousel .layui-carousel-ind {
-             position: absolute;
-             top: -41px;
-             text-align: right;
+            position: absolute;
+            top: -41px;
+            text-align: right;
         }
         .layadmin-carousel .layui-carousel-ind ul {
-             background: 0 0;
-         }
+            background: 0 0;
+        }
         .layadmin-carousel .layui-carousel-ind li.layui-this {
             background-color: #999;
         }
@@ -170,6 +180,13 @@
         }
         .tag-items .layui-btn .tag-close {
             cursor: pointer;
+        }
+        .tipsCard{
+            margin: 10px auto;
+        }
+        .tableList{
+            width: 96%;
+            margin:0 auto;
         }
     </style>
 
@@ -201,3 +218,5 @@
         </div>
     </header>
 </div>
+{% block content %}{% endblock %}
+{% include "partial/footer.html" %}

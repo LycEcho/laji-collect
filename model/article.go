@@ -5,6 +5,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"lajiCollect/app/request"
 	"lajiCollect/config"
+	constant2 "lajiCollect/config/constant/db"
 	"lajiCollect/config/constant/regular"
 	"lajiCollect/library"
 	"lajiCollect/services"
@@ -17,20 +18,21 @@ import (
 
 type Article struct {
 	Id           		int    `json:"id" gorm:"column:id;type:int(10) unsigned not null AUTO_INCREMENT;primary_key"`
-	SourceId     		int    `json:"source_id" gorm:"column:source_id;type:int(11) not null COMMENT '采集源ID';default:0"`
-	Title        		string `json:"title" gorm:"column:title;type:varchar(190) not null COMMENT '关键词';default:'';index:idx_title"`
-	Keywords     		string `json:"keywords" gorm:"column:keywords;type:varchar(250) not null COMMENT '关键词';default:''"`
-	Description  		string `json:"description" gorm:"column:description;type:varchar(250) not null COMMENT '描述';default:''"`
+	SourceId     		int    `json:"source_id" gorm:"column:source_id;type:int(11) not null ;comment:'采集源ID';default:0"`
+	Title        		string `json:"title" gorm:"column:title;type:varchar(190) not null ;comment:'关键词';default:'';index:idx_title"`
+	Keywords     		string `json:"keywords" gorm:"column:keywords;type:varchar(250) not null ;comment:'关键词';default:''"`
+	Description  		string `json:"description" gorm:"column:description;type:varchar(250) not null ;comment:'描述';default:''"`
 	Content      		string `json:"content" gorm:"-"`																								//内容
-	ArticleType  		int    `json:"article_type" gorm:"column:article_type;type:tinyint(1) unsigned not null COMMENT '文章类型';default:0;index:idx_article_type"`
-	OriginUrl    		string `json:"origin_url" gorm:"column:origin_url;type:varchar(250) not null COMMENT '源地址';default:'';index:idx_origin_url"`
-	Author       		string `json:"author" gorm:"column:author;type:varchar(100) not null COMMENT '作者';default:''"`
-	Views        		int    `json:"views" gorm:"column:views;type:int(10) not null COMMENT '查看次数';default:0;index:idx_views"`
-	Status       		int    `json:"status" gorm:"column:status;type:tinyint(1) unsigned not null COMMENT '状态 【0=待采集】【1=有效数据】【2=采集中】【3=无效数据】';default:0;index:idx_status"`
-	StatusRelease       int    `json:"status_release" gorm:"column:status_release;type:tinyint(1) unsigned not null COMMENT '发布状态 【0=未发布】';default:0;index:idx_status_release"`
-	CreatedTime  		int    `json:"created_time" gorm:"column:created_time;type:int(11) unsigned not null COMMENT '创建时间';default:0;index:idx_created_time"`
-	UpdatedTime  		int    `json:"updated_time" gorm:"column:updated_time;type:int(11) unsigned not null COMMENT '更新时间';default:0;index:idx_updated_time"`
-	DeletedTime  		int    `json:"-" gorm:"column:deleted_time;type:int(11) unsigned not null;default:0"`
+	ArticleType  		int    `json:"article_type" gorm:"column:article_type;type:tinyint(1) unsigned not null;comment:'文章类型';default:0;index:idx_article_type"`
+	OriginUrl    		string `json:"origin_url" gorm:"column:origin_url;type:varchar(250) not null ;comment:'源地址';default:'';index:idx_origin_url"`
+	Author       		string `json:"author" gorm:"column:author;type:varchar(100) not null ;comment:'作者';default:''"`
+	Views        		int    `json:"views" gorm:"column:views;type:int(10) not null ;comment:'查看次数';default:0;index:idx_views"`
+	Status       		int    `json:"status" gorm:"column:status;type:tinyint(1) unsigned not null ;comment:'状态 【0=待采集】【1=有效数据】【2=采集中】【3=无效数据】';default:0;index:idx_status"`
+	StatusRelease       int    `json:"status_release" gorm:"column:status_release;type:tinyint(1) unsigned not null ;comment:'发布状态 【0=未发布】';default:0;index:idx_status_release"`
+	CreatedTime  		int    `json:"created_time" gorm:"column:created_time;type:int(11) unsigned not null ;comment:'创建时间';default:0;index:idx_created_time"`
+	UpdatedTime  		int    `json:"updated_time" gorm:"column:updated_time;type:int(11) unsigned not null ;comment:'更新时间';default:0;index:idx_updated_time"`
+	DeletedTime  		int    `json:"-" gorm:"column:deleted_time;type:int(11) unsigned not null;comment:'删除时间';default:0"`
+	ReleaseTime  		int    `json:"releaseTime" gorm:"column:release_time;type:int(11) unsigned not null ;comment:'发布时间';default:0;index:idx_releaseTime"`
 	OriginDomain 		string `json:"-" gorm:"-"`
 	OriginPath   		string `json:"-" gorm:"-"`
 	ContentText  		string `json:"-" gorm:"-"`
@@ -38,16 +40,16 @@ type Article struct {
 }
 
 type ArticleData struct {
-	Id      int    `json:"id" gorm:"column:id;type:int(10) ;unsigned not null AUTO_INCREMENT;primary_key"`
-	Content string `json:"content" gorm:"column:content;type:longtext;not null;default:''"`
+	Id      int    `json:"id" gorm:"column:id;type:int(10) unsigned not null AUTO_INCREMENT;primary_key"`
+	Content string `json:"content" gorm:"column:content;type:longtext not null;"`
 }
 
 type ArticleSource struct {
 	Id         int               `json:"id" gorm:"column:id;type:int(10) unsigned not null AUTO_INCREMENT;primary_key"`
 	Url        string            `json:"url" gorm:"column:url;type:varchar(190) not null;default:'';index:idx_url"`
-	UrlType    int               `json:"urlType" gorm:"column:url_type;type:tinyint(1) not null COMMENT '【1=列表】【2=详情】【3=wordpress网站Rss链接】';default:0"`
-	ErrorTimes int               `json:"error_times" gorm:"column:error_times;type:int(10) not null COMMENT '抓取错误时间';default:0;index:idx_error_times"`
-	IsMonitor int               `json:"isMonitor" gorm:"column:is_monitor;type:tinyint(1) not null COMMENT '是否一直监听更新';default:0;"`
+	UrlType    int               `json:"urlType" gorm:"column:url_type;type:tinyint(1) not null ;comment:'【1=列表】【2=详情】【3=wordpress网站Rss链接】';default:0"`
+	ErrorTimes int               `json:"error_times" gorm:"column:error_times;type:int(10) not null ;comment:'抓取错误时间';default:0;index:idx_error_times"`
+	IsMonitor int               `json:"isMonitor" gorm:"column:is_monitor;type:tinyint(1) not null ;comment:'是否一直监听更新';default:0;"`
 	Attr       *ArticleSourceAttr `json:"attr" gorm:"-"`
 }
 
@@ -75,6 +77,40 @@ func (article *Article) Save() error {
 	if err := db.Save(article).Error; err != nil {
 		return err
 	}
+	articleData := ArticleData{
+		Id:      article.Id,
+		Content: article.Content,
+	}
+	db.Save(&articleData)
+
+	return nil
+}
+
+func (article *Article) Insert() error {
+	if article.Id == 0 {
+		article.CreatedTime = int(time.Now().Unix())
+	}
+	if len(article.Content) <= 0 {
+		article.Status = constant2.DbArticleStatusFial
+	}else{
+		article.Status = constant2.DbArticleStatusPass
+	}
+
+	nowArticle := &Article{}
+	db := services.DB
+	db.Model(&Article{}).Where("origin_url=?",article.OriginUrl).Find(nowArticle)
+	if nowArticle.Id == 0 {
+		if err := db.Model(&Article{}).Where("origin_url=?",article.OriginUrl).Create(&article).Error; err != nil {
+			return err
+		}
+	}else{
+		article.UpdatedTime = int(time.Now().Unix())
+		article.Id = nowArticle.Id
+		if err := db.Model(&Article{}).Where("origin_url=?",article.OriginUrl).Update(&article).Error; err != nil {
+			return err
+		}
+	}
+
 	articleData := ArticleData{
 		Id:      article.Id,
 		Content: article.Content,
@@ -510,4 +546,25 @@ func (article *Article) ReplaceHref(src string) string {
 		src = strings.Replace(src, match[1], newSrc, -1)
 	}
 	return src
+}
+
+//发布中
+func (article *Article) ReleaseIng() error {
+	db := services.DB
+	err := db.Model(&Article{}).Where("id=?",article.Id).Update(&Article{StatusRelease: constant2.DbArticleStatusReleaseIng}).Error
+	return err
+}
+
+//发布成功
+func (article *Article) ReleaseSuccess() error {
+	db := services.DB
+	err := db.Model(&Article{}).Where("id=?",article.Id).Update(&Article{StatusRelease: constant2.DbArticleStatusReleaseEd, ReleaseTime: int(time.Now().Unix())}).Error
+	return err
+}
+
+//恢复未发布状态
+func (article *Article) ReleaseUn() error {
+	db := services.DB
+	err := db.Model(&Article{}).Where("id=?",article.Id).Update(&Article{StatusRelease: constant2.DbArticleStatusReleaseUn, ReleaseTime: 0}).Error
+	return err
 }

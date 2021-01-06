@@ -38,7 +38,7 @@ go env -w GOPROXY=https://goproxy.cn,direct
 ```shell script
 go mod tidy
 go mod vendor
-go build main.go
+go run main.go
 
 ```
 编译结束后，运行编译出来的文件，然后双击运行可执行文件，在打开的浏览器中的可视化界面，填写数据库信息，完成初始化配置，添加采集源，即可开始采集之旅。
@@ -48,6 +48,9 @@ go build main.go
 * 增加自动发布到远程服务器网站功能 ✅
 * 增加关键词自动替换(伪原创的一部分)
 * 增加内容自动分段重组功能(待定)
+
+## 官网微信交流群
+<img src="https://gitee.com/echo_yjl_lyc/laji-collect/raw/master/public/qunCode.png" />
 
 ## 协助完善
 欢迎有能力有贡献精神的个人或团体参与到本采集器的开发完善工作中来，共同完善采集功能。请fork一个分支，然后在上面修改，修改完了提交pull request合并请求。

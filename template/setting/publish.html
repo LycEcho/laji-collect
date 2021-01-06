@@ -1,4 +1,6 @@
-{% include "partial/header.html" %}
+{% extends 'partial/layouts.html' %}
+{% block seoTitle %}自动发布配置设置{% endblock %}
+{% block content %}
 <main class="container">
     <div class="install">
         <h1>自动发布配置</h1>
@@ -153,6 +155,27 @@
                     </div>
                 </div>
             </div>
+
+            <div class="layui-card" id="content-set">
+                <div class="layui-card-header">内容设置</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">内容头</label>
+                        <div class="layui-input-block">
+                            <input type="text" autocomplete="off" name="contentHead" placeholder="特殊：{title}标题,{originUrl}原地址,{author}作者名称" class="layui-input tag-value">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">内容尾</label>
+                        <div class="layui-input-block">
+                            <input type="text" autocomplete="off" name="contentFoot" placeholder="特殊：{title}标题,{originUrl}原地址,{author}作者名称" class="layui-input tag-value">
+                            示例： 文章来源于互联网，如有雷同请联系站长删除：&lt;a href=&quot;{originUrl}&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;{title}&lt;/a&gt;
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="layui-form-item">
                 <div class="layui-input-block">
                     <a class="layui-btn setting-submit">确认修改</a>
@@ -161,7 +184,7 @@
         </form>
     </div>
 </main>
-{% include "partial/footer.html" %}
+
 <script type="text/html" id="tag-template">
     <div class="tag-item layui-btn layui-btn-sm layui-btn-primary" data-type="itemType" data-index="itemIndex">
         <input type="hidden" name="itemType[]" value="itemTitle" />
@@ -261,15 +284,19 @@
                 $('#local-publish').removeClass('layui-hide');
                 $('#remote-publish').addClass('layui-hide');
                 $('#field-set').removeClass('layui-hide');
+                $('#content-set').removeClass('layui-hide');
             } else if(value == 2) {
                 $('#local-publish').addClass('layui-hide');
                 $('#remote-publish').removeClass('layui-hide');
                 $('#field-set').removeClass('layui-hide');
+                $('#content-set').removeClass('layui-hide');
             } else {
                 $('#local-publish').addClass('layui-hide');
                 $('#remote-publish').addClass('layui-hide');
                 $('#field-set').addClass('layui-hide');
+                $('#content-set').addClass('layui-hide');
             }
         }
     });
 </script>
+{% endblock %}

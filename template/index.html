@@ -1,4 +1,5 @@
-{% include "partial/header.html" %}
+{% extends 'partial/layouts.html' %}
+{% block content %}
 <main class="container">
     <div class="index">
         <div class="layui-fluid">
@@ -90,7 +91,7 @@
                         <div class="layui-card-body layui-text">
                             <div>√ 自动定时执行采集任务</div>
                             <div>√ 增加可视化添加采集列表连接、查看修改已采集内容操作界面</div>
-                            <div>× 增加自动发布到远程服务器网站功能</div>
+                            <div>√ 增加自动发布到远程服务器网站功能</div>
                             <div>× 增加关键词自动替换(伪原创的一部分)</div>
                             <div>× 增加内容自动分段重组功能(待定)</div>
                         </div>
@@ -110,7 +111,6 @@
         </div>
     </div>
 </main>
-{% include "partial/footer.html" %}
 <script>
     layui.use(["layer", "echarts", 'carousel'], function () {
         let $ = layui.$;
@@ -291,3 +291,4 @@
         }, 'json');
     });
 </script>
+{% endblock %}

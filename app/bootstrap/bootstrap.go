@@ -26,7 +26,7 @@ func New(port int, loggerLevel string) *Bootstrap {
 	bootstrap.LoggerLevel = loggerLevel
 
 	//crond
-	core.Crond()
+	go core.Crond()
 
 	return &bootstrap
 }

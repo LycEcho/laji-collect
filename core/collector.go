@@ -35,26 +35,42 @@ type RequestData struct {
 }
 
 var waitGroup sync.WaitGroup
-var ch chan string
+var chDetail  chan int
+var chPublish chan int
 
 func Crond() {
-	//一次使用几个通道
-	ch = make(chan string, config.CollectorConfig.Channels)
 
-	keyword.Extractor.Init(keyword.DefaultProps, true, config.ExecPath+"dictionary.txt")
+	//自动发布 并发数量
+	chPublish = make(chan int, config.CollectorConfig.ChannelsPublish)
+	//采集抓取 并发数量
+	chDetail = make(chan int, config.CollectorConfig.Channels)
+	listr,_,_ := provider.GetArticleListForRelease(0,100)
+	library.DEBUG(listr)
+	go func() {
+		//每分钟运行一次，检查是否有需要采集的文章s
+		crontab := cron.New(cron.WithSeconds())
+		//10分钟抓一次列表
+		crontab.AddFunc("1 */10 * * * *", CollectListTask)
+		//1分钟抓一次详情
+		crontab.AddFunc("1 */1 * * * *", CollectDetailTask)
+		//1分钟抓一次详情
+		crontab.AddFunc("1 */1 * * * *", autoPubLishList)
+		crontab.Start()
+	}()
 
-	//1小时运行一次，采集地址，加入到地址池
+	go func() {
+		keyword.Extractor.Init(keyword.DefaultProps, true, config.ExecPath+"dictionary.txt")
+		//启动的时候，先执行一遍
 
-	//每分钟运行一次，检查是否有需要采集的文章s
-	crontab := cron.New(cron.WithSeconds())
-	//10分钟抓一次列表
-	crontab.AddFunc("1 */10 * * * *", CollectListTask)
-	//1分钟抓一次详情
-	crontab.AddFunc("1 */1 * * * *", CollectDetailTask)
-	crontab.Start()
-	//启动的时候，先执行一遍
-	//go CollectListTask()
-	go CollectDetailTask()
+
+		//抓取 列表
+		//go CollectListTask()
+		//抓取 详情
+		go CollectDetailTask()
+		//自动发布
+		//go autoPubLishList()
+
+	}()
 }
 
 //采集列表
@@ -62,16 +78,16 @@ func CollectListTask() {
 	if services.DB == nil {
 		return
 	}
-	fmt.Println("collect list")
 	db := services.DB
-	var articleSources []model.ArticleSource
-	err := db.Model(model.ArticleSource{}).Where("`error_times` < ? AND is_monitor=?", config.CollectorConfig.ErrorTimes,1).Find(&articleSources).Error
+	var articleSources []*model.ArticleSource
+	err := db.Model(&model.ArticleSource{}).Where("`error_times` < ? AND is_monitor=?", config.CollectorConfig.ErrorTimes,1).Find(&articleSources).Error
 	if err != nil {
 		return
 	}
 
 	for _, v := range articleSources {
-		getArticleLinks(v)
+		provider.GetArticleSourceInfo(v)
+		GetArticleLinks(v)
 	}
 }
 
@@ -80,37 +96,17 @@ func CollectDetailTask() {
 	if services.DB == nil {
 		return
 	}
-	fmt.Println("collect detail")
 	//检查article的地址
-	var articleList []model.Article
-
-	db := services.DB
-	db.Debug().Model(model.Article{}).Where("status = 0").Order("id asc").Limit(config.CollectorConfig.Channels * 100).Scan(&articleList)
-	for _, vv := range articleList {
-		ch <- vv.OriginUrl
-		waitGroup.Add(1)
-		go getArticleDetail(vv)
+	articleList := []*model.Article{}
+	services.DB.Debug().Model(&model.Article{}).Where("status = ?",constant.DbArticleStatusWait).Order("id asc").Limit(config.CollectorConfig.Channels).Scan(&articleList)
+	for _, v := range articleList {
+		go GetArticleDetail(v)
 	}
-
-	waitGroup.Wait()
 }
 
-//根据列表获取链接
-func getArticleLinks(v model.ArticleSource) {
-	GetArticleLinks(&v)
-}
-
-//获取文章详情 加入队列
-func getArticleDetail(v model.Article) {
-	 defer func() {
-		 waitGroup.Done()
-		 <-ch
-	 }()
-
-	 GetArticleDetail(&v)
- }
-
- //wordpress网站Rss链接
+ /**
+  @name wordpress网站Rss链接
+  */
  func GetArticleDetailWordpressRss(v *model.ArticleSource) error {
 	 requestData, err := Request(v.Url)
 	 if err != nil {
@@ -148,7 +144,8 @@ func getArticleDetail(v model.Article) {
 		 //内容
 		 html,_		:= nowEq.Find("contentEncoded").Html()
 		 article.Content = article.FormatContent(html,v)
-		 article.Save()
+
+		 article.Insert()
 	 }
 	 return nil
  }
@@ -165,21 +162,19 @@ func GetArticleLinks(v *model.ArticleSource) {
 				if err != nil {
 					goto RETURNERR
 				}
-				return
-			break
-	case constant.DbArticleUrlTypeDetail:
-		//先检查数据库里有没有，没有的话，就抓回来
-		article := &model.Article{}
-		article.CreatedTime 	= int(time.Now().Unix())
-		article.SourceId 		= v.Id
-		article.ArticleType 	= v.UrlType
-		article.Status 			= 0
-		article.OriginUrl 		= v.Url
-		db.Model(model.Article{}).Where(model.Article{OriginUrl: article.OriginUrl}).FirstOrCreate(&article)
-		return
-		break
-	case constant.DbArticleUrlTypeList:
-	default:
+		case constant.DbArticleUrlTypeDetail:
+			//先检查数据库里有没有，没有的话，就抓回来
+			article := &model.Article{}
+			article.CreatedTime 	= int(time.Now().Unix())
+			article.SourceId 		= v.Id
+			article.ArticleType 	= v.UrlType
+			article.Status 			= 0
+			article.OriginUrl 		= v.Url
+			db.Model(&model.Article{}).Where("origin_url=?",article.OriginUrl).FirstOrCreate(&article)
+		case constant.DbArticleUrlTypeList:
+			fallthrough
+		default:
+
 		urlParse, err := url.Parse(v.Url)
 		if err == nil {
 			articleList, err := CollectLinks(v.Url)
@@ -209,7 +204,9 @@ func GetArticleLinks(v *model.ArticleSource) {
 				article.SourceId = v.Id
 				article.ArticleType = v.UrlType
 				article.Status = 0
-				db.Model(model.Article{}).Where(model.Article{OriginUrl: article.OriginUrl}).FirstOrCreate(&article)
+				db.Model(&model.Article{}).Where("origin_url=?",article.OriginUrl).FirstOrCreate(article)
+
+				go GetArticleDetail(article)
 			}
 			return
 		} else {
@@ -222,9 +219,12 @@ func GetArticleLinks(v *model.ArticleSource) {
 
 //万能抓取详情页
 func GetArticleDetail(v *model.Article) {
+	chDetail <- v.Id
+	library.DEBUG("执行万能抓取详情")
+
 	db := services.DB
 	//标记当前为执行中
-	db.Model(model.Article{}).Where("`id` = ?", v.Id).Update("status", 2)
+	db.Model(&model.Article{}).Where("`id` = ?", v.Id).Update("status", constant.DbArticleStatusIng)
 
 	//开始抓取详情
 	_ = CollectDetail(v)
@@ -272,139 +272,188 @@ func GetArticleDetail(v *model.Article) {
 	article := v
 	fmt.Println(status, v.Title, v.OriginUrl)
 	article.Save()
+	<- chDetail
+}
 
-	AutoPublish(article)
+//自动发布列表
+func autoPubLishList(){
+	if services.DB == nil {
+		return
+	}
+	if config.ContentConfig.AutoPublish != 0 {
+		list, _, _ := provider.GetArticleListForRelease(0, config.CollectorConfig.ChannelsPublish)
+		for _,v := range list {
+			go AutoPublish(v)
+		}
+	}
 }
 
 //自动发布推送
 func AutoPublish(article *model.Article) {
-	if config.ContentConfig.AutoPublish == 0 || article.Status != 1 {
-		return
-	}
-	publishData := map[string]string{
-		config.ContentConfig.TitleField: article.Title,
-	}
-	if config.ContentConfig.KeywordsField != "" {
-		publishData[config.ContentConfig.KeywordsField] = article.Keywords
-	}
-	if config.ContentConfig.DescriptionField != "" {
-		publishData[config.ContentConfig.DescriptionField] = article.Description
-	}
-	if config.ContentConfig.CreatedTimeField != "" {
-		publishData[config.ContentConfig.CreatedTimeField] = strconv.Itoa(article.CreatedTime)
-	}
-	if config.ContentConfig.AuthorField != "" {
-		publishData[config.ContentConfig.AuthorField] = article.Author
-	}
-	if config.ContentConfig.ViewsField != "" {
-		publishData[config.ContentConfig.ViewsField] = strconv.Itoa(article.Views)
-	}
-	if config.ContentConfig.TableName == config.ContentConfig.ContentTableName || config.ContentConfig.ContentTableName == "" || config.ContentConfig.AutoPublish == 2 {
-		if config.ContentConfig.ContentField != "" {
-			publishData[config.ContentConfig.ContentField] = article.Content
+	chPublish <- article.Id
+	if !(config.ContentConfig.AutoPublish != 0 && len(article.Content)>0 && article.Status == constant.DbArticleStatusPass) {
+		goto DONE
+	}else{
+		//正在发布
+		article.ReleaseIng()
+		var err error
+
+		//内容头
+		if config.ContentConfig.ContentHead != ""  {
+			head := strings.ReplaceAll(config.ContentConfig.ContentHead,"{title}",article.Title)
+			head = strings.ReplaceAll(head,"{originUrl}",article.OriginUrl)
+			head = strings.ReplaceAll(head,"{author}",article.Author)
+			if head != "" {
+				article.Content = "<p>"+head+"</p>" + article.Content
+			}
 		}
-	}
-	if len(config.ContentConfig.ExtraFields) > 0 {
-		for _, v := range config.ContentConfig.ExtraFields {
-			value := v.Value
-			if v.Value == "{id}" {
-				//获取id
-				value = strconv.Itoa(article.Id)
-			} else if v.Value == "{py}" {
-				//获取标题首字母
-				str, err := pinyin.New(article.Title).Split("-").Mode(pinyin.WithoutTone).Convert()
-				if err == nil {
-					value = ""
-					strArr := strings.Split(str, "-")
-					for _, v := range strArr {
-						value += string(v[0])
+
+		//内容尾
+		if config.ContentConfig.ContentFoot != "" {
+			foot := strings.ReplaceAll(config.ContentConfig.ContentFoot,"{title}", article.Title )
+			foot = strings.ReplaceAll(foot,"{originUrl}", article.OriginUrl)
+			foot = strings.ReplaceAll(foot,"{author}", article.Author)
+			article.Content +="<p>"+foot+"</p>"
+		}
+
+
+		publishData := map[string]string{
+			config.ContentConfig.TitleField: article.Title,
+		}
+		if config.ContentConfig.KeywordsField != "" {
+			publishData[config.ContentConfig.KeywordsField] = article.Keywords
+		}
+		if config.ContentConfig.DescriptionField != "" {
+			publishData[config.ContentConfig.DescriptionField] = article.Description
+		}
+		if config.ContentConfig.CreatedTimeField != "" {
+			publishData[config.ContentConfig.CreatedTimeField] = strconv.Itoa(article.CreatedTime)
+		}
+		if config.ContentConfig.AuthorField != "" {
+			publishData[config.ContentConfig.AuthorField] = article.Author
+		}
+		if config.ContentConfig.ViewsField != "" {
+			publishData[config.ContentConfig.ViewsField] = strconv.Itoa(article.Views)
+		}
+		if config.ContentConfig.TableName == config.ContentConfig.ContentTableName || config.ContentConfig.ContentTableName == "" || config.ContentConfig.AutoPublish == 2 {
+			if config.ContentConfig.ContentField != "" {
+				publishData[config.ContentConfig.ContentField] = article.Content
+			}
+		}
+		if len(config.ContentConfig.ExtraFields) > 0 {
+			for _, v := range config.ContentConfig.ExtraFields {
+				value := v.Value
+				if v.Value == "{id}" {
+					//获取id
+					value = strconv.Itoa(article.Id)
+				} else if v.Value == "{py}" {
+					//获取标题首字母
+					str, err := pinyin.New(article.Title).Split("-").Mode(pinyin.WithoutTone).Convert()
+					if err == nil {
+						value = ""
+						strArr := strings.Split(str, "-")
+						for _, v := range strArr {
+							value += string(v[0])
+						}
 					}
+				} else if v.Value == "{pinyin}" {
+					//获取标题拼音
+					str, err := pinyin.New(article.Title).Split("").Mode(pinyin.WithoutTone).Convert()
+					if err == nil {
+						value = str
+					}
+				} else if v.Value == "{time}" {
+					//获取标题首字母
+					value = strconv.Itoa(int(time.Now().Unix()))
+				} else if v.Value == "{date}" {
+					//获取标题首字母
+					value = time.Now().Format("2006-01-02")
 				}
-			} else if v.Value == "{pinyin}" {
-				//获取标题拼音
-				str, err := pinyin.New(article.Title).Split("").Mode(pinyin.WithoutTone).Convert()
-				if err == nil {
-					value = str
-				}
-			} else if v.Value == "{time}" {
-				//获取标题首字母
-				value = strconv.Itoa(int(time.Now().Unix()))
-			} else if v.Value == "{date}" {
-				//获取标题首字母
-				value = time.Now().Format("2006-01-02")
+				publishData[v.Key] = value
 			}
-			publishData[v.Key] = value
-		}
-	}
-
-	if config.ContentConfig.AutoPublish == 1 {
-		//本地发布
-		publishDataKeys := make([]string, len(publishData))
-		publishDataValues := make([]string, len(publishData))
-		j := 0
-		for k, v := range publishData {
-			publishDataKeys[j] = k
-			publishDataValues[j] = fmt.Sprintf("'%s'", v)
-			j++
 		}
 
-		insertId := int64(0)
-		result, err := services.DB.DB().Exec(fmt.Sprintf("INSERT INTO `%s` (%s)VALUES(%s)", config.ContentConfig.TableName, strings.Join(publishDataKeys, ","), strings.Join(publishDataValues, ",")))
+
+		if config.ContentConfig.AutoPublish == 1 {
+			//本地发布
+			publishDataKeys := make([]string, len(publishData))
+			publishDataValues := make([]string, len(publishData))
+			j := 0
+			for k, v := range publishData {
+				publishDataKeys[j] = k
+				publishDataValues[j] = fmt.Sprintf("'%s'", v)
+				j++
+			}
+
+			insertId := int64(0)
+			result, err := services.DB.DB().Exec(fmt.Sprintf("INSERT INTO `%s` (%s)VALUES(%s)", config.ContentConfig.TableName, strings.Join(publishDataKeys, ","), strings.Join(publishDataValues, ",")))
+			if err == nil {
+				insertId, err = result.LastInsertId()
+				if config.ContentConfig.ContentTableName != "" && config.ContentConfig.TableName != config.ContentConfig.ContentTableName {
+					err = services.DB.Exec(fmt.Sprintf("INSERT INTO `%s` (%s, %s)VALUES(?, ?)", config.ContentConfig.ContentTableName, config.ContentConfig.ContentIdField, config.ContentConfig.ContentField), insertId, article.Content).Error
+				}
+			}
+		} else if config.ContentConfig.AutoPublish == 2 && config.ContentConfig.RemoteUrl != "" {
+			//headers
+			sg := gorequest.New().Timeout(10 * time.Second).Post(config.ContentConfig.RemoteUrl)
+
+			//判断请求内容类型
+			if config.ContentConfig.ContentType == "json" {
+				sg = sg.Set("Content-Type", "multipart/form-data")
+			} else if config.ContentConfig.ContentType == "urlencode" {
+				sg = sg.Set("Content-Type", "application/x-www-form-urlencoded")
+			} else {
+				sg = sg.Set("Content-Type", "application/json")
+			}
+
+			//加上请求头
+			if len(config.ContentConfig.Headers) > 0 {
+				for _, v := range config.ContentConfig.Headers {
+					sg = sg.Set(v.Key, v.Value)
+				}
+			}
+
+			//加上cookie
+			if len(config.ContentConfig.Cookies) > 0 {
+				urlInfo, _ := url.Parse(config.ContentConfig.RemoteUrl)
+				for _, v := range config.ContentConfig.Cookies {
+					cookie := &http.Cookie{
+						Name:    v.Key,
+						Value:   v.Value,
+						Path:    "/",
+						Domain:  urlInfo.Hostname(),
+						Expires: time.Now().Add(86400 * time.Second),
+					}
+					sg = sg.AddCookie(cookie)
+				}
+			}
+
+			//不接收处理结果
+			resp, _, errs := sg.SendMap(publishData).End()
+			if len(errs) > 0 {
+				fmt.Println(errs)
+				goto DONE
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != 200 {
+				err = fmt.Errorf("请求发布状态异常")
+			}
+			//library.DEBUG(resp.Body)
+		}
+
+		//更改发布状态
 		if err == nil {
-			insertId, err = result.LastInsertId()
-			if config.ContentConfig.ContentTableName != "" && config.ContentConfig.TableName != config.ContentConfig.ContentTableName {
-				services.DB.Exec(fmt.Sprintf("INSERT INTO `%s` (%s, %s)VALUES(?, ?)", config.ContentConfig.ContentTableName, config.ContentConfig.ContentIdField, config.ContentConfig.ContentField), insertId, article.Content)
-			}
+			article.ReleaseSuccess()
+		}else{
+			article.ReleaseUn()
 		}
-	} else if config.ContentConfig.AutoPublish == 2 && config.ContentConfig.RemoteUrl != "" {
-		//headers
-		sg := gorequest.New().Timeout(10 * time.Second).Post(config.ContentConfig.RemoteUrl)
-
-		//判断请求内容类型
-		if config.ContentConfig.ContentType == "json" {
-			sg = sg.Set("Content-Type", "multipart/form-data")
-		} else if config.ContentConfig.ContentType == "urlencode" {
-			sg = sg.Set("Content-Type", "application/x-www-form-urlencoded")
-		} else {
-			sg = sg.Set("Content-Type", "application/json")
-		}
-
-		//加上请求头
-		if len(config.ContentConfig.Headers) > 0 {
-			for _, v := range config.ContentConfig.Headers {
-				sg = sg.Set(v.Key, v.Value)
-			}
-		}
-
-		//加上cookie
-		if len(config.ContentConfig.Cookies) > 0 {
-			urlInfo, _ := url.Parse(config.ContentConfig.RemoteUrl)
-			for _, v := range config.ContentConfig.Cookies {
-				cookie := &http.Cookie{
-					Name:    v.Key,
-					Value:   v.Value,
-					Path:    "/",
-					Domain:  urlInfo.Hostname(),
-					Expires: time.Now().Add(86400 * time.Second),
-				}
-				sg = sg.AddCookie(cookie)
-			}
-		}
-
-		//不接收处理结果
-		resp, _, errs := sg.SendMap(publishData).End()
-		if len(errs) > 0 {
-			fmt.Println(errs)
-			return
-		}
-		defer resp.Body.Close()
-		fmt.Println("请求发布结果")
-		library.DEBUG(resp.Body)
 	}
+	DONE:
+	<- chPublish
 }
 
 //抓取链接
-func CollectLinks(link string) ([]model.Article, error) {
+func CollectLinks(link string) ([]*model.Article, error) {
 	requestData, err := Request(link)
 	if err != nil {
 		log.Println(err)
@@ -417,7 +466,7 @@ func CollectLinks(link string) ([]model.Article, error) {
 		return nil, err
 	}
 
-	var articles []model.Article
+	var articles []*model.Article
 	aLinks := doc.Find("a")
 	//读取所有连接
 	for i := range aLinks.Nodes {
@@ -431,7 +480,7 @@ func CollectLinks(link string) ([]model.Article, error) {
 		}
 		//斜杠/结尾的抛弃
 		//if strings.HasSuffix(href, "/") == false {
-		articles = append(articles, model.Article{
+		articles = append(articles, &model.Article{
 			Title:     title,
 			OriginUrl: href,
 		})
@@ -481,9 +530,7 @@ func CollectDetail(article *model.Article) error {
 	return nil
 }
 
-/**
- * 请求域名返回数据
- */
+//请求域名返回数据
 func Request(urlPath string) (*RequestData, error) {
 	resp, body, errs := gorequest.New().TLSClientConfig(&tls.Config{InsecureSkipVerify: true}).Timeout(90*time.Second).AppendHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36").Get(urlPath).End()
 	if len(errs) > 0 {

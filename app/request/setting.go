@@ -3,6 +3,7 @@ package request
 type DefaultSetting struct {
 	ErrorTimes         int      `form:"error_times"`
 	Channels           int      `form:"channels"`
+	ChannelsPublish    int      `form:"channels_publish"`
 	TitleMinLength     int      `form:"title_min_length"`
 	ContentMinLength   int      `form:"content_min_length"`
 	TitleExclude       []string `form:"title_exclude[]"`
@@ -30,4 +31,6 @@ type ContentSetting struct {
 	Headers          []string `form:"headers[]"`
 	Cookies          []string `form:"cookies[]"`
 	ExtraFields      []string `form:"extra_fields[]"`
+	ContentHead		 string     `form:"contentHead"`
+	ContentFoot		 string    `form:"contentFoot"`
 }

@@ -6,7 +6,11 @@ const(
 
 	DbArticleStatusWait = 0  //待采集
 	DbArticleStatusPass = 1  //有效数据
-	DbArticleStatusIng = 0  //采集中
-	DbArticleStatusFial = 0  //无效数据
+	DbArticleStatusIng = 2  //采集中
+	DbArticleStatusFial = 3  //无效数据
 
+
+	DbArticleStatusReleaseUn = 0  //未发布
+	DbArticleStatusReleaseEd = 1  //已发布
+	DbArticleStatusReleaseIng = 2  //发布中
 )

@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"github.com/kataras/iris/v12"
 	"lajiCollect/app/request"
 	"lajiCollect/config"
-	"github.com/kataras/iris/v12"
 	"strings"
 )
 
@@ -12,7 +12,6 @@ func DefaultSetting(ctx iris.Context) {
 }
 
 func PublishSetting(ctx iris.Context) {
-
 	ctx.View("setting/publish.html")
 }
 
@@ -25,6 +24,7 @@ func DefaultSettingApi(ctx iris.Context) {
 }
 
 func PublishSettingApi(ctx iris.Context) {
+
 	ctx.JSON(iris.Map{
 		"code": config.StatusOK,
 		"msg":  "",
@@ -44,6 +44,7 @@ func DefaultSettingForm(ctx iris.Context) {
 
 	config.JsonData.Collector.ErrorTimes = req.ErrorTimes
 	config.JsonData.Collector.Channels = req.Channels
+	config.JsonData.Collector.ChannelsPublish = req.ChannelsPublish
 	config.JsonData.Collector.TitleMinLength = req.TitleMinLength
 	config.JsonData.Collector.ContentMinLength = req.ContentMinLength
 	config.JsonData.Collector.TitleExclude = req.TitleExclude
@@ -91,7 +92,8 @@ func PublishSettingForm(ctx iris.Context) {
 	config.JsonData.Content.ContentField = req.ContentField
 	config.JsonData.Content.RemoteUrl = req.RemoteUrl
 	config.JsonData.Content.ContentType = req.ContentType
-
+	config.JsonData.Content.ContentHead	=	req.ContentHead
+	config.JsonData.Content.ContentFoot	=	req.ContentFoot
 	var headers []config.KeyValue
 	for _, v := range req.Headers {
 		vv := strings.Split(v, ":")

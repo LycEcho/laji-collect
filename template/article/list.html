@@ -1,11 +1,21 @@
-{% include "partial/header.html" %}
+{% extends 'partial/layouts.html' %}
+{% block seoTitle %}采集文章列表{% endblock %}
+{% block content %}
 <main class="container">
     <div class="install">
         <h1>采集的文章</h1>
+        <div class="tableList">
         <table id="list" lay-filter="list"></table>
+        </div>
+    </div>
+    <div class="container layui-card tipsCard">
+        <div class="layui-card-header">Tips（2021-01-06）：</div>
+        <div class="layui-card-body">
+           有效数据才会自动发布<br>
+           执行抓取中不能删除文章<br>
+        </div>
     </div>
 </main>
-{% include "partial/footer.html" %}
 <script type="text/html" id="toolbar">
     <div class="layui-btn-container">
         <button class="layui-btn layui-btn-sm layui-btn-primary" lay-event="delete">批量删除</button>
@@ -42,8 +52,18 @@
                         return d.status === 3 ? "<div style='color: red'>无效数据</div>" : d.status === 2 ? "<div style='color: yellow'>采集中</div>" : d.status === 1 ? "<div style='color: green'>有效数据</div>" : d.status === 0 ? "<div style='color: orange'>待采集</div>" : "<div style='color: gray'>其他数据</div>";
                     }
                 }
+                ,{field: 'status_release', title: '发布状态', edit: 'text', width:100, templet: function(d){
+                        return d.status_release === 1 ? "<div style='color: green'>已发布</div>" : "<div style='color: orange'>未发布</div>"
+                    }
+                }
+                ,{field: 'updated_time',title:'更新时间',templet:function(d){
+
+                        return layui.util.toDateString((d.updated_time??d.created_time)*100*10)
+                    }
+                    ,width: 160}
                 ,{fixed: 'right', width:220, align:'center', toolbar: '#control'}
             ]]
+            ,  page: {prev:'上一页',next:'下一页',theme: '#3388ff',layout:['prev','page', 'next', 'skip','refresh']},
         });
         table.on('toolbar(list)', function(obj){
             var checkStatus = table.checkStatus(obj.config.id);
@@ -102,5 +122,11 @@
                 });
             }
         });
+
+        //定时刷新
+        window.setInterval(function() {
+            table.reload('list')
+        },60000)
     });
 </script>
+{% endblock %}

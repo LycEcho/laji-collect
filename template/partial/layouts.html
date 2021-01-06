@@ -26,8 +26,8 @@
             background-color: #f5f6f7;
         }
         .header{
-            height: 52px;
-            line-height: 52px;
+            height: 62px;
+            line-height: 62px;
             text-align: center;
             z-index: 1234;
             -webkit-user-select: none;
@@ -188,6 +188,14 @@
             width: 96%;
             margin:0 auto;
         }
+        .logo{
+            height: 46px;
+            margin-top: 2px;
+        }
+        .logoTitle{
+            display: inline-block;
+            margin-left: 10px;
+        }
     </style>
 
 </head>
@@ -195,7 +203,11 @@
 <div class="container">
     <header class="header">
         <div class="tabbar">
+
             <ul class="tabbar-inner">
+                <li class="tabbar-item">
+                    <a href="http://cj.lycecho.com/" ><img src="//static.lycecho.com/logo/logo.png" rel="辣鸡采集" class="logo"/><h3 class="logoTitle">辣鸡采集</h3></a>
+                </li>
                 <li class="tabbar-item{% if webInfo.TabBar == 'home' %} active{% endif %}">
                     <a href="/" rel="nofollow">首页</a>
                 </li>

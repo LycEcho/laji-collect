@@ -94,6 +94,7 @@ func PublishSettingForm(ctx iris.Context) {
 	config.JsonData.Content.ContentType = req.ContentType
 	config.JsonData.Content.ContentHead	=	req.ContentHead
 	config.JsonData.Content.ContentFoot	=	req.ContentFoot
+	config.JsonData.Content.OriginUrlField	=	req.OriginUrlField
 	var headers []config.KeyValue
 	for _, v := range req.Headers {
 		vv := strings.Split(v, ":")

@@ -18,6 +18,7 @@ type contentConfig struct {
 	ContentTableName string     `json:"content_table_name"`
 	ContentIdField   string     `json:"content_id_field"`
 	ContentField     string     `json:"content_field"`
+	OriginUrlField	 string    ` json:"originUrlField"`
 	RemoteUrl        string     `json:"remote_url"`
 	ContentType      string     `json:"content_type"`
 	Headers          []KeyValue `json:"headers"`
@@ -25,4 +26,5 @@ type contentConfig struct {
 	ExtraFields      []KeyValue `json:"extra_fields"`
 	ContentHead		 string     `json:"contentHead"`
 	ContentFoot		 string    ` json:"contentFoot"`
+
 }

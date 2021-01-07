@@ -335,6 +335,10 @@ func AutoPublish(article *model.Article) {
 		if config.ContentConfig.ViewsField != "" {
 			publishData[config.ContentConfig.ViewsField] = strconv.Itoa(article.Views)
 		}
+		if config.ContentConfig.OriginUrlField != "" {
+			publishData[config.ContentConfig.OriginUrlField] = article.OriginUrl
+		}
+
 		if config.ContentConfig.TableName == config.ContentConfig.ContentTableName || config.ContentConfig.ContentTableName == "" || config.ContentConfig.AutoPublish == 2 {
 			if config.ContentConfig.ContentField != "" {
 				publishData[config.ContentConfig.ContentField] = article.Content

@@ -26,6 +26,7 @@ type ContentSetting struct {
 	ContentTableName string   `form:"content_table_name"`
 	ContentIdField   string   `form:"content_id_field"`
 	ContentField     string   `form:"content_field"`
+	OriginUrlField   string   `form:"originUrlField"`
 	RemoteUrl        string   `form:"remote_url"`
 	ContentType      string   `form:"content_type"`
 	Headers          []string `form:"headers[]"`

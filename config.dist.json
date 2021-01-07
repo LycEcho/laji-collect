@@ -52,6 +52,7 @@
 		"content_table_name": "",
 		"content_id_field": "id",
 		"content_field": "content",
+		"originUrlField": "origin_url",
 		"remote_url": "",
 		"content_type": "urlencode",
 		"headers": null,

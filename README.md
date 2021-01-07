@@ -50,7 +50,7 @@ go run main.go
 * 增加内容自动分段重组功能(待定)
 
 ## 官网微信交流群
-<img src="https://gitee.com/echo_yjl_lyc/laji-collect/raw/master/public/qunCode.png" />
+<img src="http://static.lycecho.com/code/qunCode.jpg" width="300"/>
 
 ## 协助完善
 欢迎有能力有贡献精神的个人或团体参与到本采集器的开发完善工作中来，共同完善采集功能。请fork一个分支，然后在上面修改，修改完了提交pull request合并请求。

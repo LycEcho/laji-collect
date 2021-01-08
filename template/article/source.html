@@ -6,6 +6,25 @@
     <div class="install container">
         <h1>数据源</h1>
         <div class="tableList">
+
+            <!-- 搜索 start-->
+            <div class="layui-form layui-card-header layuiadmin-card-header-auto" lay-filter="searchForm">
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-block" >
+                        <input type="text" name="keyword" class="layui-input" autocomplete="off"placeholder="链接/标题"  >
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <button class="layui-btn layuiadmin-btn-admin" lay-submit lay-filter="searchSub">
+                        <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i>
+                    </button>
+                </div>
+
+            </div>
+            <!-- 搜索 end -->
+
         <table id="list" lay-filter="list" ></table>
         </div>
     </div>
@@ -108,6 +127,20 @@
                 ,{fixed: 'right', width:180, align:'center', toolbar: '#control'}
             ]]
         });
+
+        //监听搜索
+        form.on('submit(searchSub)', function(data){
+            var field = data.field;
+            //执行重载
+            table.reload('list', {
+                where: field
+                ,page:{
+                    curr:1
+                }
+            })
+        })
+
+
         table.on('toolbar(list)', function(obj){
             var checkStatus = table.checkStatus(obj.config.id);
             switch(obj.event){

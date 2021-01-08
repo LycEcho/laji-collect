@@ -27,8 +27,14 @@ func ArticleList(ctx iris.Context) {
 func ArticleListApi(ctx iris.Context) {
 	currentPage := ctx.URLParamIntDefault("page", 1)
 	pageSize := ctx.URLParamIntDefault("limit", 20)
+	keyword := ctx.URLParam("keyword")
 
-	articleList, total, err := provider.GetArticleList(currentPage, pageSize)
+	where := ""
+	if keyword != "" {
+		where = "concat(title,keywords,description,origin_url) like '%"+keyword+"%'"
+	}
+
+	articleList, total, err := provider.GetArticleList(currentPage, pageSize,where)
 	if err != nil {
 		ctx.JSON(iris.Map{
 			"code": config.StatusFailed,
@@ -82,8 +88,12 @@ func ArticleDeleteApi(ctx iris.Context) {
 func ArticleSourceListApi(ctx iris.Context) {
 	currentPage := ctx.URLParamIntDefault("page", 1)
 	pageSize := ctx.URLParamIntDefault("limit", 20)
-
-	sourceList, total, err := provider.GetArticleSourceList(currentPage, pageSize)
+	keyword := ctx.URLParam("keyword")
+	where := ""
+	if keyword != "" {
+		where = "url like '%"+keyword+"%'"
+	}
+	sourceList, total, err := provider.GetArticleSourceList(currentPage, pageSize,where)
 	list := response.FormatArticleSourceList(sourceList)
 	if err != nil {
 		ctx.JSON(iris.Map{

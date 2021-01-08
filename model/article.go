@@ -386,7 +386,7 @@ func (article *Article) ParseContent(doc *goquery.Document, body string,source *
 			if otherItems.Length() > 0 {
 				otherItems.Remove()
 			}
-			contentItem.Find("h1").Remove()
+
 			//根据规则过滤
 			if library.HasContain(contentText, config.CollectorConfig.ContentExclude) {
 				contentText = ""
@@ -493,6 +493,10 @@ func (article *Article) FormatContent(content string,source *ArticleSource) stri
 	re4, _ := regexp.Compile(constant.RegularExpressionContentAttrDataComplete)
 	content = re4.ReplaceAllLiteralString(content, "")
 
+
+	//h1换成h2
+	content = strings.ReplaceAll(content, "<h1>", "<h2>" )
+	content = strings.ReplaceAll(content, "</h1>", "</h2>")
 
 	//根据指定规则去除
 	rule,err := source.GetParseRule()

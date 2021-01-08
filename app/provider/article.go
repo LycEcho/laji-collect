@@ -6,12 +6,15 @@ import (
 	"lajiCollect/services"
 )
 //获得采集源列表
-func GetArticleSourceList(currentPage int, pageSize int) ([]*model.ArticleSource, int, error) {
+func GetArticleSourceList(currentPage int, pageSize int,query interface{}, args ...interface{}) ([]*model.ArticleSource, int, error) {
 	sources := []*model.ArticleSource{}
 	offset := (currentPage - 1) * pageSize
 	var total int
 
 	builder := services.DB.Model(model.ArticleSource{}).Order("id desc")
+	if query != "" {
+		builder = builder.Where(query,args)
+	}
 	if err := builder.Count(&total).Limit(pageSize).Offset(offset).Find(&sources).Error; err != nil {
 		return nil, 0, err
 	}
@@ -31,12 +34,16 @@ func GetArticleSourceInfo(articleSource *model.ArticleSource){
 	}
 }
 //获得文章列表
-func GetArticleList(currentPage int, pageSize int) ([]*model.Article, int, error) {
+func GetArticleList(currentPage int, pageSize int,query interface{}, args ...interface{} ) ([]*model.Article, int, error) {
 	articles := []*model.Article{}
 	offset := (currentPage - 1) * pageSize
 	var total int
 
 	builder := services.DB.Model(&model.Article{}).Order("id desc")
+	if query != "" {
+		builder = builder.Where(query,args)
+	}
+
 	if err := builder.Count(&total).Limit(pageSize).Offset(offset).Find(&articles).Error; err != nil {
 		return nil, 0, err
 	}
@@ -80,11 +87,9 @@ func GetArticleById(id int) (*model.Article, error) {
 		return nil, err
 	}
 	var articleData model.ArticleData
-	if err := services.DB.Model(model.ArticleData{}).Where("`id` = ?", id).First(&articleData).Error; err != nil {
-		return nil, err
+	if err := services.DB.Model(model.ArticleData{}).Where("`id` = ?", id).First(&articleData).Error; err == nil {
+		article.Content = articleData.Content
 	}
-	article.Content = articleData.Content
-
 	return &article, nil
 }
 

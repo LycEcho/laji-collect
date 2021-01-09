@@ -24,7 +24,6 @@ func GetArticleSourceList(currentPage int, pageSize int,query interface{}, args 
 	return sources, total, nil
 }
 
-
 //获取采集源的附表数据
 func GetArticleSourceInfo(articleSource *model.ArticleSource){
 	if articleSource.Attr == nil {
@@ -33,6 +32,7 @@ func GetArticleSourceInfo(articleSource *model.ArticleSource){
 		articleSource.Attr = attr
 	}
 }
+
 //获得文章列表
 func GetArticleList(currentPage int, pageSize int,query interface{}, args ...interface{} ) ([]*model.Article, int, error) {
 	articles := []*model.Article{}
@@ -78,7 +78,6 @@ func GetArticleListForRelease(currentPage int, pageSize int) ([]*model.Article, 
 	}
 	return articles, total, nil
 }
-
 
 //获得文章 根据Id
 func GetArticleById(id int) (*model.Article, error) {

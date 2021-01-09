@@ -1,0 +1,72 @@
+<script type="text/html" id="tag-template">
+    <div class="tag-item layui-btn layui-btn-sm layui-btn-primary" data-type="itemType" data-index="itemIndex">
+        <input type="hidden" name="itemType[]" value="itemTitle"/>
+        <span>itemTitle</span>
+        <i class="tag-close layui-icon layui-icon-close"></i>
+    </div>
+</script>
+<script>
+    layui.use(['jquery'],function () {
+        let $ = layui.$;
+        $(document).on('click', '.tag-close', function () {
+            let type = $(this).parents('.tag-item').data('type');
+            let index = $(this).parents('.tag-item').data('index');
+            content[type].splice(index, 1);
+            $(this).parents('.tag-item').remove();
+        });
+
+        $(document).on('keydown', '.tag-input', function (event) {
+            if (event.keyCode === 13) {
+                let inputType = $(this).data('inputtype')
+                console.log(inputType)
+                if( inputType == 'one' ){
+                    let val = $(this).val();
+                    let type = $(this).data('type');
+                    if(!content[type]) {
+                        content[type] = [];
+                    }
+                    let exists = false;
+                    for(let i in content[type]){
+                        if(content[type][i] === val) {
+                            exists = true;
+                        }
+                    }
+                    if(!exists) {
+                        let i = content[type].push(val);
+                        $(this).next('.tag-items').append($('#tag-template').html().replace(/itemType/g, type).replace(/itemIndex/g, i).replace(/itemTitle/g, val));
+                        $(this).val("");
+                    }
+                }else if(inputType == 'two'){
+                    let key = $(this).find('.tag-key').val();
+                    let val = $(this).find('.tag-value').val();
+                    let type = $(this).data('type');
+                    if(!content[type]) {
+                        content[type] = [];
+                    }
+                    let exists = false;
+                    for(let i in content[type]){
+                        if(content[type][i].key === key) {
+                            exists = true;
+                            content[type][i].key = val;
+                        }
+                    }
+                    if(!exists) {
+                        content[type].push({
+                            key: key,
+                            value: val,
+                        });
+                        $(this).find('.tag-key').val("");
+                        $(this).find('.tag-value').val("");
+                    }
+                    $(this).next('.tag-items').html("");
+                    for(let i in content[type]){
+                        let val = content[type][i].key + ":" + content[type][i].value;
+                        $(this).next('.tag-items').append($('#tag-template').html().replace(/itemType/g, type).replace(/itemIndex/g, i).replace(/itemTitle/g, val));
+                    }
+                }
+
+
+            }
+        });
+    });
+</script>

@@ -80,6 +80,28 @@
             </div>
         </div>
 
+
+        <div class="layui-form-item">
+
+            <div class="layui-collapse">
+                <div class="layui-colla-item">
+                    <h2 class="layui-colla-title">内容规则</h2>
+                    <div class="layui-colla-content layui-show">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">包含任意关键词</label>
+                            <div class="layui-input-block">
+                                <input type="text" data-type="contentContain" value="" autocomplete="off" placeholder="回车添加" class="layui-input tag-input" data-inputtype="one">
+                                <div class="tag-items">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="id">
     </div>
 </script>
 <script type="text/html" id="toolbar">
@@ -93,12 +115,17 @@
     <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
 </script>
+
+
 <script>
-    layui.use(['table', 'layer', 'form'], function(){
+    var content = {};
+    layui.use(['table', 'layer', 'form','element'], function(){
         let table = layui.table;
         let layer = layui.layer;
         let form  = layui.form;
         let $ = layui.$;
+        var element = layui.element;
+
 
         table.render({
             elem: '#list'
@@ -163,7 +190,7 @@
                     layer.open({
                         type: 1,
                         title: "添加新的数据源",
-                        area: ["450px","450px"],
+                        area: ["450px"],
                         content: $("#add-form").html(),
                         btn: ["确定", "取消"],
                         yes: function(index){
@@ -182,6 +209,7 @@
                             });
                         }
                         ,success:function(){
+                            element.init();
                             form.render()
                         }
                     })
@@ -202,7 +230,38 @@
                     }, 'json');
                 });
             } else if(layEvent === 'edit'){
-                layer.msg("单击需要修改的字段即可修改");
+                $.renderDiy($('#add-form').html(),data,{
+                    title: "编辑数据源",
+                    area: ["450px"],
+                    btn: ["确定", "取消"],
+                    yes: function(index){
+                        let data = form.val("source-form");
+                        data = formatFormatData(data)
+                        $.postJson({
+                            url:"/api/article/source/save"
+                            ,data: data
+                            ,success: function(res) {
+                                if(res.code === 0) {
+                                    layer.close(index);
+                                    table.reload('list');
+                                }
+                                layer.msg(res.msg);
+                            }
+                        });
+                    }
+                    ,success:function(){
+                        console.log(data)
+                        $(".tag-input").each(function(i, item){
+                            let type = $(item).data('type');
+                            for(let i in data['ruleSettingArr'][type]){
+                                $(item).next('.tag-items').append($('#tag-template').html().replace(/itemType/g, type).replace(/itemIndex/g, i).replace(/itemTitle/g, data['ruleSettingArr'][type][i]));
+                            }
+                        })
+                        form.val("source-form",data);
+                        element.init();
+                        form.render()
+                    }
+                })
             } else if(layEvent === 'catch'){
                 $.post("/api/article/source/catch", {id: data.id}, function(res) {
                     layer.msg(res.msg);
@@ -224,16 +283,33 @@
         });
 
         function formatFormatData(data){
+
+            data.id                 = Number(data.id)
             data.error_times        = Number(data.error_times);
             data.urlType            = Number(data.urlType);
             data.isMonitor          = Number(data.isMonitor);
             data.rule = {};
             data.rule.urlOnlySelf   = Number(data.urlOnlySelf);
             data.rule.onlyText      = Number(data.onlyText);
+
+            //内容包含
+            var reg = RegExp(/contentContain\[/);
+            var contentContain = [];
+            $.each(data,function(k,v){
+                if(reg.test(k)){
+                    contentContain.push(v)
+                    delete  data[k]
+                }
+            })
+            data.rule.contentContain = contentContain
             delete data.urlOnlySelf
             delete data.onlyText
             return data
         }
+
     });
 </script>
+
+{% include "partial/tag.html" %}
+
 {% endblock %}

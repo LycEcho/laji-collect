@@ -22,6 +22,7 @@ func HasSuffix(need string, needArray []string) bool {
 	return false
 }
 
+//判断数组是否存在字符串
 func HasContain(need string, needArray []string) bool {
 	for _, v := range needArray {
 		if strings.Contains(need, v) {

@@ -507,6 +507,18 @@ func CollectDetail(article *model.Article) error {
 	re, _ = regexp.Compile("\\<script[\\S\\s]+?\\</script\\>")
 	requestData.Body = re.ReplaceAllString(requestData.Body, "")
 
+
+	sourceInfo,_ := provider.GetArticleSourceById(article.SourceId)
+	rule,err := sourceInfo.GetParseRule()
+	if err == nil {
+		if len(rule.ContentInclude) > 0 {
+			if library.HasContain(requestData.Body, rule.ContentInclude) == false {
+				return nil
+			}
+		}
+	}
+	library.DEBUG("走到这里来了")
+
 	htmlR := strings.NewReader(requestData.Body)
 	doc, err := goquery.NewDocumentFromReader(htmlR)
 	if err != nil {
@@ -515,8 +527,6 @@ func CollectDetail(article *model.Article) error {
 
 	//获取前缀
 	article.GetDomain()
-
-	sourceInfo,_ := provider.GetArticleSourceById(article.SourceId)
 
 	//如果是百度百科地址，单独处理
 	if strings.Contains(article.OriginUrl, "baike.baidu.com") {

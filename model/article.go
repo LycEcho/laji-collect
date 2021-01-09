@@ -60,7 +60,7 @@ type ArticleSourceAttr struct {
 
 func(article *ArticleSource) GetParseRule() (*request.ArticleSourceAttrRule,error) {
 	resp := &request.ArticleSourceAttrRule{}
-	if article.Attr != nil {
+	if article != nil && article.Attr != nil {
 		if err := json.Unmarshal([]byte(article.Attr.Rule), resp); err != nil{
 			resp = &request.ArticleSourceAttrRule{}
 			return resp,err

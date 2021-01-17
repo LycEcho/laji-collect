@@ -76,7 +76,7 @@
                 }
                 ,{field: 'updated_time',title:'更新时间',templet:function(d){
 
-                        return layui.util.toDateString((d.updated_time??d.created_time)*100*10)
+                        return layui.util.toDateString((d.updated_time?d.updated_time:d.created_time)*100*10)
                     }
                     ,width: 160}
                 ,{fixed: 'right', width:220, align:'center', toolbar: '#control'}

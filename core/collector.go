@@ -44,8 +44,6 @@ func Crond() {
 	chPublish = make(chan int, config.CollectorConfig.ChannelsPublish)
 	//采集抓取 并发数量
 	chDetail = make(chan int, config.CollectorConfig.Channels)
-	listr,_,_ := provider.GetArticleListForRelease(0,100)
-	library.DEBUG(listr)
 	go func() {
 		//每分钟运行一次，检查是否有需要采集的文章s
 		crontab := cron.New(cron.WithSeconds())

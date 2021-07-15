@@ -14,7 +14,7 @@
 .DS_Store
 .idea
 /vendor
-/config.json
+/config.json1
 /collector*
 /test
 /test.go

@@ -28,7 +28,9 @@ golang
 本采集器可用运行在 Windows系统、Mac 系统、Linux系统（Centos、Ubuntu等），可用下载编译好的程序直接执行，也可以下载源码自己编译。
 
 ## 辣鸡文章采集器可用伪原创吗
-本采集器暂时还不支持伪原创功能，后期会增加适当的伪原创选项。
+## 伪原创免费api
+在线体验 cj.lycecho.com(cj.lycecho.com)
+项目地址 https://github.com/LycEcho/Pseudo-original-AI(https://github.com/LycEcho/Pseudo-original-AI)
 
 ## 如何安装使用
 * 下载可执行文件  

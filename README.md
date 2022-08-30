@@ -1,5 +1,8 @@
 # 辣鸡采集 laji-collect
 
+## 伪原创免费api
+在线体验 cj.lycecho.com
+
 ## 介绍
 辣鸡采集，采集世界上所有辣鸡数据 欢迎大家来采集
 # 基于fesiong万能采集器底层开发

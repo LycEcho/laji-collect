@@ -1,6 +1,6 @@
 # 辣鸡采集 laji-collect
 
-## 根据关键词生成文章-伪原创免费api
+## 根据关键词生成文章-伪原创免费api (该项目的升级版 可购买程序使用)
 在线体验 www.lycecho.com
 
 项目地址 https://github.com/LycEcho/Pseudo-original-AI
